@@ -105,11 +105,11 @@ async def test_customer_portal_authentication_and_verification_request():
         assert resp.status_code == 200, f"Access failed: {resp.text}"
         data = resp.json()
         assert data["status"] == "success"
-        # Cookie was set in response
-        cookies = resp.cookies
+        # Persist cookie directly on client instance
+        client.cookies.update(resp.cookies)
 
         # 2. Get customer portal current state
-        portal_resp = await client.get("/api/v1/customer/portal", cookies=cookies)
+        portal_resp = await client.get("/api/v1/customer/portal")
         assert portal_resp.status_code == 200
         portal_data = portal_resp.json()
         assert len(portal_data.get("assignments", [])) > 0
@@ -119,7 +119,7 @@ async def test_customer_portal_authentication_and_verification_request():
         assignment_id = account_data["assignment_id"]
 
         # 3. Request OTP Verification
-        req_resp = await client.post(f"/api/v1/customer/assignments/{assignment_id}/verify", cookies=cookies)
+        req_resp = await client.post(f"/api/v1/customer/assignments/{assignment_id}/verify")
         assert req_resp.status_code == 200
         req_data = req_resp.json()
         assert req_data["status"] == "success"

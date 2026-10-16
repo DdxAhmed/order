@@ -1,6 +1,7 @@
 // API Client for OrderTrofy
 
-const BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+const rawBaseUrl = (import.meta.env.VITE_API_URL || '/api/v1').trim();
+const BASE_URL = rawBaseUrl.replace(/\/+$/, '');
 
 class ApiClient {
   constructor() {
@@ -27,7 +28,10 @@ class ApiClient {
   }
 
   async request(endpoint, options = {}) {
-    const url = endpoint.startsWith('http') ? endpoint : `${BASE_URL}${endpoint}`;
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = (endpoint.startsWith('http://') || endpoint.startsWith('https://'))
+      ? endpoint
+      : `${BASE_URL}${cleanEndpoint}`;
     const headers = {
       ...options.headers,
     };
