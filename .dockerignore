@@ -1,0 +1,52 @@
+# Secrets and local configurations
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+
+# Version control and local environments
+.git
+.gitignore
+.venv
+venv/
+env/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# Testing and caches
+.pytest_cache/
+.coverage
+htmlcov/
+tests/
+
+# Build and IDE artifacts
+dist/
+build/
+node_modules/
+.idea/
+.vscode/
+
+# Subprojects and documentation (separate build contexts)
+frontend/
+backend/
+deploy/
+docs/
+*.md
+
+# Obsolete / duplicate directories
+ordertrofy/
+backups/
+data/
+scratch/
+*.log
+**/*.log
+
+# User-provided Steam email samples
+Your-Steam-account-Access-from-new-web-or-mobile-device*/
+Your-Steam-account-Access-from-new-web-or-mobile-device-*.pdf
+Tu-cuenta-de-Steam-acceso-desde-un-nuevo-navegador-web-o-dispositivo-mvil*/
+Tu-cuenta-de-Steam-acceso-desde-un-nuevo-navegador-web-o-dispositivo-mvil-*.pdf

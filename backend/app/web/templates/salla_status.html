@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% block title %}{{ 'Usage session' if lang == 'en' else 'جلسة الاستخدام' }}{% endblock %}{% block content %}
+<section class="card public-card">
+  <p class="eyebrow">{{ 'Service access' if lang == 'en' else 'وصول الخدمة' }}</p>
+  <h1>{{ 'Usage session opened' if lang == 'en' else 'تم فتح جلسة الاستخدام' }}</h1>
+  <p>Order Number: <strong>{{ identity.reference_key }}</strong></p>
+  <p>{{ 'This is an unverified external reference used only to separate usage counters. No sensitive data is shown.' if lang == 'en' else 'هذا الرقم مرجع خارجي غير مُتحقق، ويُستخدم فقط لفصل عداد الاستخدام. لا تعرض الجلسة بيانات حساسة.' }}</p>
+  {% if services %}<h2>{{ 'Permitted services' if lang == 'en' else 'الخدمات المصرح بها' }}</h2><ul>{% for service in services %}<li><strong>{{ service.service_key }}</strong>: {{ 'remaining' if lang == 'en' else 'المتبقي' }} {{ service.remaining }} {{ 'uses in a rolling window of' if lang == 'en' else 'من نافذة استخدام متحركة — مدتها' }} {{ service.period_seconds }} {{ 'seconds; cooldown' if lang == 'en' else 'ثانية، والمهلة' }} {{ service.cooldown_seconds }} {{ 'seconds.' if lang == 'en' else 'ثانية.' }}</li>{% endfor %}</ul>{% else %}<p>{{ 'No public service is configured yet.' if lang == 'en' else 'لا توجد خدمة عامة مهيأة حاليًا.' }}</p>{% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3a41ca">
+<title>بوابة توصيل أكواد الألعاب</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+@property --a{syntax:"<angle>";initial-value:0deg;inherits:false}
+:root{--bg:#3a41ca;--p:#c8f920;--p2:#9bd600;--i:#464ed2;--k:#ffffff;--c:#c8f920;--navy:#1e1b43;--navy2:#252b79;--t:#ffffff;--m:#d3d6ef;--line:rgba(211,214,239,.28)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{font-family:'Cairo',system-ui,-apple-system,'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:var(--t);min-height:100vh;min-height:100dvh;line-height:1.7;overflow-x:hidden;-webkit-font-smoothing:antialiased;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+
+/* ===== الخلفية ===== */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.bg::before{content:"";position:absolute;inset:0;background:
+radial-gradient(60% 50% at 85% 0%,rgba(110,120,255,.55),transparent 70%),
+radial-gradient(55% 45% at 0% 100%,rgba(30,27,67,.55),transparent 70%),
+radial-gradient(40% 30% at 45% 55%,rgba(200,249,32,.08),transparent 70%)}
+.floor{position:absolute;left:-60%;right:-60%;bottom:-8%;height:55%;background-image:linear-gradient(rgba(255,255,255,.14) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.14) 1px,transparent 1px);background-size:56px 56px;transform:perspective(520px) rotateX(64deg);-webkit-mask-image:linear-gradient(to top,#000,transparent 85%);mask-image:linear-gradient(to top,#000,transparent 85%);animation:floor 7s linear infinite}
+@keyframes floor{to{background-position:0 56px}}
+.spark{position:absolute;bottom:-12px;width:var(--s);height:var(--s);border-radius:50%;background:var(--c);box-shadow:0 0 12px var(--c),0 0 24px rgba(200,249,32,.6);opacity:0;left:var(--x);animation:rise var(--d) linear infinite;animation-delay:var(--l)}
+@keyframes rise{0%{opacity:0;transform:translateY(0)}15%{opacity:.9}100%{opacity:0;transform:translateY(-105vh) translateX(30px)}}
+
+/* ===== التخطيط ===== */
+.wrap{position:relative;z-index:1;max-width:1160px;margin:0 auto;padding:clamp(20px,5vw,56px) clamp(16px,4vw,32px);min-height:100vh;min-height:100dvh;display:grid;align-content:center;gap:clamp(24px,5vw,40px)}
+@media(min-width:960px){.wrap{grid-template-columns:minmax(0,1fr) 470px;align-items:center;gap:72px}}
+
+/* ===== القسم الرئيسي ===== */
+.hero{text-align:center}
+@media(min-width:960px){.hero{text-align:right}}
+.logo{display:inline-grid;place-items:center;width:clamp(64px,12vw,92px);aspect-ratio:1;border-radius:26px;margin-bottom:clamp(14px,3vw,24px);background:linear-gradient(145deg,rgba(30,27,67,.9),rgba(37,43,121,.7));border:1.5px solid rgba(200,249,32,.7);box-shadow:0 0 50px rgba(200,249,32,.35),inset 0 0 24px rgba(200,249,32,.12);animation:bob 4s ease-in-out infinite}
+.logo svg{width:52%;height:52%;color:var(--p);filter:drop-shadow(0 0 10px rgba(200,249,32,.7))}
+@keyframes bob{50%{transform:translateY(-8px)}}
+h1{font-weight:900;font-size:clamp(2.1rem,7.2vw,4.4rem);line-height:1.2;letter-spacing:-.01em;background:linear-gradient(100deg,#e6ff8a 0%,#c8f920 55%,#a6e600 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 4px 24px rgba(30,27,67,.55))}
+.lead{margin-top:16px;color:var(--m);font-size:clamp(1rem,2.6vw,1.2rem);max-width:34em;margin-inline:auto}
+@media(min-width:960px){.lead{margin-inline:0}}
+.chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:22px}
+@media(min-width:960px){.chips{justify-content:flex-start}}
+.chip{padding:7px 16px;border-radius:999px;font-size:.88rem;font-weight:700;color:#fff;background:rgba(30,27,67,.45);border:1px solid var(--line)}
+.steps{display:none;list-style:none;margin-top:40px;gap:14px}
+@media(min-width:960px){.steps{display:grid}}
+.steps li{display:flex;align-items:center;gap:14px;padding:14px 18px;border-radius:18px;background:rgba(30,27,67,.55);border:1px solid var(--line);font-weight:600}
+.steps b{flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:12px;font-weight:900;color:var(--navy);background:linear-gradient(135deg,var(--p),var(--p2));box-shadow:0 0 18px rgba(200,249,32,.45)}
+
+/* ===== البطاقة ===== */
+.card{position:relative;border-radius:28px;padding:clamp(20px,5vw,38px);background:linear-gradient(160deg,rgba(37,43,121,.92),rgba(30,27,67,.97));-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px);box-shadow:0 30px 90px rgba(10,10,50,.6),0 0 80px rgba(200,249,32,.1)}
+.card::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;background:conic-gradient(from var(--a),transparent 0 55%,var(--p2),var(--p),#fff,transparent);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);animation:spin 6s linear infinite;pointer-events:none}
+@keyframes spin{to{--a:360deg}}
+.card h2{font-size:1.35rem;font-weight:900;margin-bottom:20px}
+.alert{margin-bottom:20px;padding:14px 16px;border-radius:14px;background:rgba(255,107,107,.14);border:1px solid rgba(255,107,107,.6);color:#ffd0d0;font-weight:600;font-size:.95rem;text-align:center}
+.field{margin-bottom:20px}
+.lbl{display:block;margin-bottom:10px;font-size:.95rem;font-weight:700;color:#fff}
+
+/* اختيار المنصة */
+.plats{display:flex;flex-wrap:wrap;gap:10px}
+.plat{position:relative;flex:1 1 calc(50% - 10px);min-width:130px}
+.plat input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.plat span{display:flex;align-items:center;justify-content:center;gap:6px;min-height:52px;padding:8px 12px;border-radius:14px;font-weight:700;font-size:.95rem;text-align:center;color:var(--m);background:rgba(10,12,50,.55);border:1.5px solid var(--line);transition:border-color .2s,background .2s,box-shadow .2s,color .2s}
+.plat input:checked+span{color:var(--p);border-color:var(--p);background:rgba(200,249,32,.12);box-shadow:0 0 24px rgba(200,249,32,.3)}
+.plat input:focus-visible+span{outline:2px solid var(--p);outline-offset:2px}
+
+/* الحقول */
+.in{display:block;width:100%;min-height:54px;padding:13px 16px;border-radius:14px;color:#fff;font:600 16px/1.4 'Cairo',system-ui,sans-serif;background:rgba(10,12,50,.6);border:1.5px solid var(--line);unicode-bidi:plaintext;text-align:start;transition:border-color .2s,box-shadow .2s}
+.in::placeholder{color:rgba(211,214,239,.5)}
+.in:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 4px rgba(200,249,32,.18),0 0 24px rgba(200,249,32,.25)}
+
+/* الزر */
+.btn{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:58px;margin-top:8px;border:0;border-radius:16px;cursor:pointer;color:var(--navy);font:900 1.15rem 'Cairo',system-ui,sans-serif;background:linear-gradient(110deg,#b4ee0e,#d6ff4a,#c8f920,#b4ee0e);background-size:250% 100%;box-shadow:0 12px 36px rgba(200,249,32,.35),inset 0 1px 0 rgba(255,255,255,.5);animation:slide 5s linear infinite;transition:transform .2s,box-shadow .2s}
+.btn::after{content:"";position:absolute;top:0;bottom:0;width:40%;left:-60%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);transform:skewX(-20deg);animation:shine 3.5s ease-in-out infinite}
+@keyframes slide{to{background-position:250% 0}}
+@keyframes shine{0%,55%{left:-60%}100%{left:130%}}
+.btn svg{width:22px;height:22px}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.75;cursor:wait}
+.btn:focus-visible{outline:3px solid #fff;outline-offset:3px}
+@media(hover:hover){.btn:hover{transform:translateY(-3px);box-shadow:0 18px 56px rgba(200,249,32,.55)}}
+
+.sep{height:1px;margin:26px 0 20px;background:linear-gradient(90deg,transparent,rgba(200,249,32,.5),transparent)}
+.alt{text-align:center}
+.alt p{font-size:.9rem;color:var(--m);margin-bottom:12px}
+.alt a{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 26px;border-radius:14px;font-weight:700;font-size:.95rem;color:var(--p);text-decoration:none;border:1.5px solid rgba(200,249,32,.6);transition:background .2s,box-shadow .2s}
+.alt a:hover,.alt a:focus-visible{background:rgba(200,249,32,.12);box-shadow:0 0 24px rgba(200,249,32,.25);outline:none}
+.note{margin-top:18px;text-align:center;font-size:.82rem;color:#b9bdf0}
+.result{margin-top:20px;padding:16px;border-radius:16px;background:rgba(200,249,32,.1);border:1px solid rgba(200,249,32,.5);color:#f4ffd0;text-align:center}.result h3{font-size:1rem;margin-bottom:7px}.result p{font-size:.9rem}.result ul{list-style:none;margin:10px 0 0;display:grid;gap:6px}.result li{padding:8px 10px;border-radius:10px;background:rgba(10,12,50,.35)}
+
+@media(max-width:380px){.plat{flex-basis:100%}.chip{font-size:.8rem;padding:6px 12px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<div class="bg" aria-hidden="true">
+  <div class="floor"></div>
+  <i class="spark" style="--x:8%;--s:4px;--d:11s;--l:0s"></i>
+  <i class="spark" style="--x:24%;--s:3px;--d:14s;--l:3s"></i>
+  <i class="spark" style="--x:41%;--s:5px;--d:12s;--l:6s"></i>
+  <i class="spark" style="--x:58%;--s:3px;--d:15s;--l:1s"></i>
+  <i class="spark" style="--x:73%;--s:4px;--d:10s;--l:4s"></i>
+  <i class="spark" style="--x:90%;--s:3px;--d:13s;--l:7s"></i>
+</div>
+
+<main class="wrap">
+
+  <!-- القسم الرئيسي -->
+  <section class="hero">
+    <div class="logo" aria-hidden="true">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    </div>
+    <h1>خدمتك جاهزة<br>وتصلك في ثواني</h1>
+    <p class="lead">اختر منصتك، أدخل رقم طلبك وحسابك، وافتح الخدمة بأمان وسهولة.</p>
+    <div class="chips">
+      <span class="chip">⚡ توصيل فوري</span>
+      <span class="chip">🔒 آمن</span>
+      <span class="chip">🎮 جميع المنصات</span>
+    </div>
+    <ol class="steps">
+      <li><b>1</b>اختر المنصة التي تلعب عليها</li>
+      <li><b>2</b>أدخل رقم الطلب وحسابك</li>
+      <li><b>3</b>افتح الخدمة مباشرة</li>
+    </ol>
+  </section>
+
+  <!-- النموذج -->
+  <section class="card">
+    <h2>افتح خدمتك الآن</h2>
+
+    {% if message %}
+    <div class="alert" role="alert">{{ message }}</div>
+    {% endif %}
+
+    <form method="post" action="/" id="accessForm">
+
+      <div class="field">
+        <span class="lbl" id="platLbl">اختر منصتك</span>
+        <div class="plats" role="radiogroup" aria-labelledby="platLbl">
+          {% for platform in platforms %}
+          <label class="plat"><input type="radio" name="platform_code" value="{{ platform.code }}" required {% if platform.code == selected_platform %}checked{% endif %}><span>{{ platform.label }}</span></label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="lbl" for="order_reference">رقم الطلب الخاص بك</label>
+        <input class="in" id="order_reference" name="order_reference" autocomplete="off" required maxlength="120" placeholder="أدخل رقم طلبك">
+      </div>
+
+      <div class="field">
+        <label class="lbl" for="account_alias">حسابك على المنصة</label>
+        <input class="in" id="account_alias" name="account_alias" autocomplete="off" autocapitalize="off" spellcheck="false" required maxlength="255" placeholder="اسم الحساب أو المعرّف">
+      </div>
+
+      <button type="submit" class="btn" id="submitBtn">
+        <span>فتح الخدمة</span>
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12"/></svg>
+      </button>
+    </form>
+
+    {% if active_platform %}
+    <section class="result" aria-live="polite">
+      <h3>جلسة الوصول جاهزة</h3>
+      <p>المنصة المختارة: {{ active_platform }}</p>
+      {% if services %}<ul>{% for service in services %}<li>{{ service.service_key }} — المتبقي {{ service.remaining }}</li>{% endfor %}</ul>{% else %}<p>لا توجد خدمة عامة مهيأة حاليًا لهذه الجلسة.</p>{% endif %}
+    </section>
+    {% endif %}
+
+    <div class="sep"></div>
+
+    <p class="note">🔒 رقم الطلب مرجع محلي للاستخدام ولا نطلب كلمة مرور أو رمز دخول.</p>
+  </section>
+
+</main>
+
+<script>
+document.getElementById('accessForm').addEventListener('submit', function () {
+  var b = document.getElementById('submitBtn');
+  b.querySelector('span').textContent = 'جاري فتح الخدمة...';
+  setTimeout(function () { b.disabled = true; }, 0);
+});
+</script>
+</body>
+</html>

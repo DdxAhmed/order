@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="{{ lang }}" dir="{{ direction }}">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}{{ t('admin_title') if admin else t('public_title') }}{% endblock %}</title>
+  <link rel="stylesheet" href="/static/app.css?v=20261005">
+</head>
+<body>
+{% if admin %}
+<aside><h1>{{ t('brand') }}</h1><nav>
+  <a href="/admin">الملخص</a><a href="/admin/accounts">المخزون</a><a href="/admin/customers">العملاء</a>
+  <a href="/admin/orders">الطلبات</a><a href="/admin/mailboxes">صناديق البريد</a><a href="/admin/import">استيراد CSV</a>
+  <a href="/admin/platforms">المنصات</a><a href="/admin/audit">سجل التدقيق</a>
+  <form action="/admin/logout" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="link">تسجيل الخروج</button></form>
+</nav></aside>
+{% endif %}
+<main class="{% if not admin %}public{% endif %}">
+  {% if message %}<p class="notice">{{ message }}</p>{% endif %}{% block content %}{% endblock %}
+</main>
+</body></html>

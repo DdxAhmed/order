@@ -1,0 +1,30 @@
+.env
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.venv/
+data/
+backups/
+
+# Frontend
+node_modules/
+dist/
+.vite/
+
+# User-provided Steam email samples contain live account data and verification codes.
+Your-Steam-account-Access-from-new-web-or-mobile-device*/
+Your-Steam-account-Access-from-new-web-or-mobile-device-*.pdf
+Tu-cuenta-de-Steam-acceso-desde-un-nuevo-navegador-web-o-dispositivo-mvil*/
+Tu-cuenta-de-Steam-acceso-desde-un-nuevo-navegador-web-o-dispositivo-mvil-*.pdf
+اللغة-البلغارية*/
+Ubisoft-Account-Security-Code*/
+Your-Rockstar-Games-verification-code*/
+
+# Duplicate nested repository directory
+ordertrofy/

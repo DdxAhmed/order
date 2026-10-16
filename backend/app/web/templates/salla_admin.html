@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% block title %}Salla{% endblock %}{% block content %}
+<h2>تكامل Salla</h2>
+<section class="card"><h3>التفويض</h3>{% if install_url %}<p><a href="{{ install_url }}" target="_blank" rel="noreferrer">فتح رابط تثبيت Salla الرسمي</a></p>{% else %}<p>أضف SALLA_APP_ID لإظهار رابط التثبيت.</p>{% endif %}{% for auth in auths %}<p>التاجر {{ auth.merchant_id }} — {{ 'مفعل' if not auth.revoked_at else 'ملغى' }} — تنتهي الجلسة {{ auth.token_expires_at }}</p>{% else %}<p>لا يوجد تفويض متجر بعد.</p>{% endfor %}</section>
+<section class="card"><h3>الخدمات العامة</h3>{% if registered_services %}<p>الخدمات المنفذة والمراجعة: {{ registered_services | join('، ') }}</p>{% else %}<p>لا توجد خدمة عامة منفذة ومراجعة في النظام حاليًا. لذلك حُفظت روابط المنتجات والسياسات القائمة للعرض فقط، ولا يمكن إنشاء ربط جديد قبل تعريف خدمة غير حساسة ووثائق علاقتها بالمنتج.</p>{% endif %}</section>
+<section class="card"><h3>روابط المنتجات الحالية</h3>{% for item in mappings %}<p>{{ item.merchant_id }} / {{ item.product_id or item.sku }} → {{ item.service_key }}</p>{% else %}<p>لا توجد روابط منتجات.</p>{% endfor %}</section>
+<section class="card"><h3>سياسات الاستخدام الحالية</h3>{% for item in policies %}<p>{{ item.service_key }}: {{ item.max_uses }} استخدام / {{ item.period_seconds }} ثانية / {{ item.cooldown_seconds }} ثانية</p>{% else %}<p>لا توجد سياسات استخدام.</p>{% endfor %}<p class="muted">أي خدمة مستقبلية غير حساسة تستخدم حدًا افتراضيًا: 5 استخدامات ناجحة لكل طلب في نافذة متحركة 24 ساعة، ومهلة 30 ثانية.</p></section>
+{% endblock %}

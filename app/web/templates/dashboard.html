@@ -1,0 +1,3 @@
+{% extends "base.html" %}{% block content %}<h2>الملخص</h2>
+<section class="stats"><div><strong>{{ counts.available }}</strong><span>متاح</span></div><div><strong>{{ counts.assigned }}</strong><span>مخصص</span></div><div><strong>{{ counts.orders }}</strong><span>طلبات</span></div><div><strong>{{ counts.errors }}</strong><span>أخطاء تحقق</span></div></section>
+<section class="card"><h3>حالة Steam</h3><p>{{ steam_status }}</p></section>{% endblock %}

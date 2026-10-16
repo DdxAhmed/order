@@ -1,0 +1,11 @@
+# Local-only overrides. No service is exposed beyond loopback.
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:5433:5432"
+  web:
+    ports:
+      - "127.0.0.1:8000:8000"
+  frontend:
+    ports:
+      - "127.0.0.1:5173:80"
