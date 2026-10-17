@@ -127,17 +127,17 @@ async def test_preserved_integrations_routes():
 
 
 @pytest.mark.asyncio
-async def test_cors_headers_and_vercel_origin():
-    """Verify CORS configuration allows production Vercel and local origins."""
+async def test_cors_headers_and_production_origins():
+    """Verify CORS configuration allows production origins."""
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        # Preflight from Vercel preview domain
-        headers = {
-            "Origin": "https://ordertrofy-frontend-test.vercel.app",
-            "Access-Control-Request-Method": "POST",
-            "Access-Control-Request-Headers": "authorization, content-type, x-admin-session",
-        }
-        resp = await client.options("/api/v1/auth/login", headers=headers)
-        assert resp.status_code == 200
-        assert resp.headers.get("access-control-allow-origin") == "https://ordertrofy-frontend-test.vercel.app"
-        assert resp.headers.get("access-control-allow-credentials") == "true"
+        for origin in ["https://ordertrofy.store", "https://www.ordertrofy.store"]:
+            headers = {
+                "Origin": origin,
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "authorization, content-type, x-admin-session",
+            }
+            resp = await client.options("/api/v1/auth/login", headers=headers)
+            assert resp.status_code == 200
+            assert resp.headers.get("access-control-allow-origin") == origin
+            assert resp.headers.get("access-control-allow-credentials") == "true"
