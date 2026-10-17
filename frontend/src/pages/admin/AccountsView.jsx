@@ -1,18 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../api/client';
 import { useLang } from '../../context/LangContext';
 import Modal from '../../components/Modal';
 import {
-  KeyRound,
   Plus,
   Search,
-  Filter,
   Edit2,
-  Trash2,
   CheckCircle,
   XCircle,
   AlertCircle,
   Gamepad2,
+  RefreshCw,
 } from 'lucide-react';
 
 export default function AccountsView() {
@@ -49,7 +47,7 @@ export default function AccountsView() {
   const [editIdentifier, setEditIdentifier] = useState('');
   const [editNotes, setEditNotes] = useState('');
 
-  const loadAccounts = async () => {
+  const loadAccounts = useCallback(async () => {
     setLoading(true);
     try {
       const query = new URLSearchParams();
@@ -74,11 +72,11 @@ export default function AccountsView() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [search, statusFilter, platformFilter, addPlatformId, addMailboxId]);
 
   useEffect(() => {
     loadAccounts();
-  }, [statusFilter, platformFilter]);
+  }, [loadAccounts]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -145,71 +143,69 @@ export default function AccountsView() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.65rem', fontWeight: 800, marginBottom: '0.35rem' }}>
+          <h2 style={{ fontSize: '1.85rem', fontWeight: 900, marginBottom: '0.35rem', color: '#fff' }}>
             {t('accounts')}
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            إدارة حسابات المخزون وصناديق البريد المرتبطة بها
+          <p style={{ color: 'var(--m)', fontSize: '0.95rem' }}>
+            مخزون الحسابات الجاهزة وتوزيعها على المنصات وصناديق البريد
           </p>
         </div>
 
-        <button onClick={() => { setActionError(null); setIsAddOpen(true); }} className="btn btn-primary">
+        <button
+          onClick={() => { setActionError(null); setIsAddOpen(true); }}
+          className="btn-neon"
+          style={{ width: 'auto', minHeight: 48, padding: '0 24px', fontSize: '1rem' }}
+        >
           <Plus size={18} />
           <span>{t('add_account')}</span>
         </button>
       </div>
 
-      {/* Filter Bar */}
-      <div className="glass-panel" style={{ padding: '1rem 1.25rem' }}>
-        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ flex: '1 1 240px', position: 'relative' }}>
-            <input
-              type="text"
-              className="form-input"
-              placeholder={t('search')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ paddingLeft: '2.5rem' }}
-            />
-            <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
-          </div>
+      {/* Filters Bar */}
+      <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: '1 1 240px' }}>
+          <Search size={18} style={{ position: 'absolute', insetInlineStart: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--m)' }} />
+          <input
+            type="text"
+            className="in"
+            style={{ paddingInlineStart: 42, minHeight: 48 }}
+            placeholder="بحث بمعرف الحساب أو اسم المستخدم..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
 
-          <select
-            className="form-select"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            style={{ width: 'auto', minWidth: 150 }}
-          >
-            <option value="">جميع الحالات</option>
-            {statuses.map((st) => (
-              <option key={st} value={st}>
-                {t(`status_${st}`)}
-              </option>
-            ))}
-          </select>
+        <select
+          className="in"
+          style={{ width: 'auto', minWidth: 150, minHeight: 48 }}
+          value={platformFilter}
+          onChange={(e) => setPlatformFilter(e.target.value)}
+        >
+          <option value="">جميع المنصات</option>
+          {platforms.map((p) => (
+            <option key={p.code} value={p.code}>{p.name}</option>
+          ))}
+        </select>
 
-          <select
-            className="form-select"
-            value={platformFilter}
-            onChange={(e) => setPlatformFilter(e.target.value)}
-            style={{ width: 'auto', minWidth: 150 }}
-          >
-            <option value="">جميع المنصات</option>
-            {platforms.map((p) => (
-              <option key={p.code} value={p.code}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+        <select
+          className="in"
+          style={{ width: 'auto', minWidth: 150, minHeight: 48 }}
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="">جميع الحالات</option>
+          {statuses.map((st) => (
+            <option key={st} value={st}>{t(`status_${st}`)}</option>
+          ))}
+        </select>
 
-          <button type="submit" className="btn btn-secondary">
-            <span>تصفية</span>
-          </button>
-        </form>
-      </div>
+        <button type="submit" className="btn-alt" style={{ minHeight: 48, padding: '0 18px' }}>
+          <span>{t('search')}</span>
+        </button>
+      </form>
 
       {/* Accounts Table */}
       <div className="table-container">
@@ -227,67 +223,77 @@ export default function AccountsView() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>
-                  جاري تحميل الحسابات...
+                <td colSpan="6" style={{ textAlign: 'center', padding: '3rem', color: 'var(--m)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem' }}>
+                    <RefreshCw size={18} className="animate-spin" color="var(--p)" />
+                    <span>جاري تحميل الحسابات...</span>
+                  </div>
                 </td>
               </tr>
             ) : accounts.length === 0 ? (
               <tr>
-                <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                  لا توجد حسابات مطابقة لمعايير البحث
+                <td colSpan="6" style={{ textAlign: 'center', padding: '3rem', color: 'var(--m)' }}>
+                  لا توجد حسابات مسجلة مطابقة للبحث
                 </td>
               </tr>
             ) : (
               accounts.map((acc) => (
                 <tr key={acc.id}>
-                  <td style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>
+                  <td style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--p)' }}>
                     {acc.identifier}
                   </td>
                   <td>
                     <span className="badge badge-neutral" style={{ gap: '0.35rem' }}>
                       <Gamepad2 size={13} />
-                      <span>{acc.platform_name || acc.platform_code}</span>
+                      <span>{acc.platform_name}</span>
                     </span>
                   </td>
-                  <td>{acc.mailbox_label || '—'}</td>
+                  <td style={{ color: 'var(--m)', fontSize: '0.875rem' }}>{acc.mailbox_label}</td>
                   <td>
                     {acc.status === 'available' ? (
-                      <span className="badge badge-success">{t('status_available')}</span>
+                      <span className="badge badge-success">متاح</span>
                     ) : acc.status === 'assigned' ? (
-                      <span className="badge badge-info">{t('status_assigned')}</span>
+                      <span className="badge badge-info">مخصص</span>
                     ) : acc.status === 'disabled' ? (
-                      <span className="badge badge-danger">{t('status_disabled')}</span>
+                      <span className="badge badge-danger">معطل</span>
                     ) : (
-                      <span className="badge badge-warning">{acc.status}</span>
+                      <span className="badge badge-neutral">{acc.status}</span>
                     )}
                   </td>
-                  <td style={{ color: 'var(--text-secondary)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <td style={{ color: 'var(--m)', fontSize: '0.85rem', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {acc.notes || '—'}
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <div style={{ display: 'flex', gap: '0.45rem' }}>
                       <button
                         onClick={() => openEditModal(acc)}
-                        className="btn btn-secondary btn-sm"
-                        title="تعديل"
+                        className="btn-alt"
+                        style={{ minHeight: 34, padding: '0 10px', fontSize: '0.8rem', gap: '0.35rem' }}
+                        title="تعديل الحساب"
                       >
                         <Edit2 size={13} />
+                        <span>تعديل</span>
                       </button>
+
                       {acc.status === 'available' ? (
                         <button
                           onClick={() => handleQuickStatusChange(acc, 'disabled')}
-                          className="btn btn-ghost btn-sm"
-                          title="تعطيل"
+                          className="btn-alt"
+                          style={{ minHeight: 34, padding: '0 10px', fontSize: '0.8rem', color: '#ff8787', borderColor: 'rgba(255,107,107,0.4)' }}
+                          title="تعطيل الحساب"
                         >
-                          <XCircle size={14} color="var(--danger)" />
+                          <XCircle size={13} />
+                          <span>تعطيل</span>
                         </button>
                       ) : acc.status === 'disabled' ? (
                         <button
                           onClick={() => handleQuickStatusChange(acc, 'available')}
-                          className="btn btn-ghost btn-sm"
-                          title="تفعيل"
+                          className="btn-alt"
+                          style={{ minHeight: 34, padding: '0 10px', fontSize: '0.8rem', color: 'var(--p)' }}
+                          title="إعادة تفعيل الحساب"
                         >
-                          <CheckCircle size={14} color="var(--success)" />
+                          <CheckCircle size={13} />
+                          <span>تفعيل</span>
                         </button>
                       ) : null}
                     </div>
@@ -302,83 +308,84 @@ export default function AccountsView() {
       {/* Add Account Modal */}
       <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="إضافة حساب مخزون جديد">
         {actionError && (
-          <div className="alert alert-danger">
+          <div className="alert-neon" role="alert">
             <AlertCircle size={16} />
             <span>{actionError}</span>
           </div>
         )}
         <form onSubmit={handleCreateAccount}>
-          <div className="form-group">
-            <label className="form-label">{t('platform')}</label>
+          <div className="field">
+            <label className="lbl" htmlFor="add_account_platform">{t('platform')}</label>
             <select
-              className="form-select"
+              id="add_account_platform"
+              className="in"
               value={addPlatformId}
               onChange={(e) => setAddPlatformId(e.target.value)}
               required
             >
               {platforms.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name} ({p.code})
-                </option>
+                <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">صندوق البريد المربوط</label>
+          <div className="field">
+            <label className="lbl" htmlFor="add_account_mailbox">صندوق البريد المرتبط</label>
             <select
-              className="form-select"
+              id="add_account_mailbox"
+              className="in"
               value={addMailboxId}
               onChange={(e) => setAddMailboxId(e.target.value)}
               required
             >
               {mailboxes.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label} ({m.auth_mode})
-                </option>
+                <option key={m.id} value={m.id}>{m.label}</option>
               ))}
             </select>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">{t('identifier')}</label>
+          <div className="field">
+            <label className="lbl" htmlFor="add_account_id">{t('identifier')}</label>
             <input
+              id="add_account_id"
               type="text"
-              className="form-input"
-              placeholder="اسم مستخدم الحساب في المنصة"
+              className="in"
+              placeholder="اسم مستخدم الحساب في Steam"
               value={addIdentifier}
               onChange={(e) => setAddIdentifier(e.target.value)}
               required
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">كلمة مرور الحساب (اختياري - تُحفظ مشفرة)</label>
+          <div className="field">
+            <label className="lbl" htmlFor="add_account_password">كلمة المرور (مشفرة بـ AES-128-CBC)</label>
             <input
+              id="add_account_password"
               type="password"
-              className="form-input"
-              placeholder="••••••••••••"
+              className="in"
+              placeholder="اختياري - تُشفر تلقائيًا بمفتاح متناظر"
               value={addPassword}
               onChange={(e) => setAddPassword(e.target.value)}
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">{t('notes')}</label>
+          <div className="field">
+            <label className="lbl" htmlFor="add_account_notes">{t('notes')}</label>
             <textarea
-              className="form-textarea"
-              rows="2"
-              placeholder="أي ملاحظات داخلية عن الحساب..."
+              id="add_account_notes"
+              className="in"
+              rows={2}
+              placeholder="ملاحظات داخلية للمشرفين (اختياري)"
               value={addNotes}
               onChange={(e) => setAddNotes(e.target.value)}
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
-            <button type="button" onClick={() => setIsAddOpen(false)} className="btn btn-secondary">
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+            <button type="button" onClick={() => setIsAddOpen(false)} className="btn-alt">
               {t('cancel')}
             </button>
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn-neon" style={{ width: 'auto', minHeight: 48, padding: '0 24px' }}>
               {t('save')}
             </button>
           </div>
@@ -386,80 +393,88 @@ export default function AccountsView() {
       </Modal>
 
       {/* Edit Account Modal */}
-      <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="تعديل حساب المخزون">
+      <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title={`تعديل الحساب [${selectedAccount?.identifier}]`}>
         {actionError && (
-          <div className="alert alert-danger">
+          <div className="alert-neon" role="alert">
             <AlertCircle size={16} />
             <span>{actionError}</span>
           </div>
         )}
         <form onSubmit={handleEditSubmit}>
-          <div className="form-group">
-            <label className="form-label">{t('identifier')}</label>
+          <div className="field">
+            <label className="lbl" htmlFor="edit_account_id">{t('identifier')}</label>
             <input
+              id="edit_account_id"
               type="text"
-              className="form-input"
+              className="in"
               value={editIdentifier}
               onChange={(e) => setEditIdentifier(e.target.value)}
               required
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">صندوق البريد</label>
+          <div className="field">
+            <label className="lbl" htmlFor="edit_account_status">{t('status')}</label>
             <select
-              className="form-select"
+              id="edit_account_status"
+              className="in"
+              value={editStatus}
+              onChange={(e) => setEditStatus(e.target.value)}
+              required
+            >
+              {statuses.map((st) => (
+                <option key={st} value={st}>{t(`status_${st}`)}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="field">
+            <label className="lbl" htmlFor="edit_account_platform">{t('platform')}</label>
+            <select
+              id="edit_account_platform"
+              className="in"
+              value={editPlatformId}
+              onChange={(e) => setEditPlatformId(e.target.value)}
+              required
+            >
+              {platforms.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="field">
+            <label className="lbl" htmlFor="edit_account_mailbox">صندوق البريد</label>
+            <select
+              id="edit_account_mailbox"
+              className="in"
               value={editMailboxId}
               onChange={(e) => setEditMailboxId(e.target.value)}
               required
             >
               {mailboxes.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label}
-                </option>
+                <option key={m.id} value={m.id}>{m.label}</option>
               ))}
             </select>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">{t('status')}</label>
-            <select
-              className="form-select"
-              value={editStatus}
-              onChange={(e) => setEditStatus(e.target.value)}
-              disabled={selectedAccount?.status === 'assigned'}
-            >
-              <option value="available">{t('status_available')}</option>
-              <option value="disabled">{t('status_disabled')}</option>
-              <option value="reserved">{t('status_reserved')}</option>
-              <option value="archived">{t('status_archived')}</option>
-              {selectedAccount?.status === 'assigned' && (
-                <option value="assigned">{t('status_assigned')}</option>
-              )}
-            </select>
-            {selectedAccount?.status === 'assigned' && (
-              <span style={{ fontSize: '0.75rem', color: 'var(--warning)', marginTop: '0.2rem' }}>
-                لا يمكن تغيير حالة حساب مخصص مباشرة؛ استخدم إعادة التخصيص من صفحة الطلبات.
-              </span>
-            )}
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">{t('notes')}</label>
+          <div className="field">
+            <label className="lbl" htmlFor="edit_account_notes">{t('notes')}</label>
             <textarea
-              className="form-textarea"
-              rows="2"
+              id="edit_account_notes"
+              className="in"
+              rows={2}
               value={editNotes}
               onChange={(e) => setEditNotes(e.target.value)}
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
-            <button type="button" onClick={() => setIsEditOpen(false)} className="btn btn-secondary">
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+            <button type="button" onClick={() => setIsEditOpen(false)} className="btn-alt">
               {t('cancel')}
             </button>
-            <button type="submit" className="btn btn-primary">
-              {t('save')}
+            <button type="submit" className="btn-neon" style={{ width: 'auto', minHeight: 48, padding: '0 24px' }}>
+              حفظ التعديلات
             </button>
           </div>
         </form>

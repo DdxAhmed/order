@@ -1,17 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../api/client';
 import { useLang } from '../../context/LangContext';
 import Modal from '../../components/Modal';
 import CopyButton from '../../components/CopyButton';
 import {
-  ShoppingBag,
   Plus,
   Link,
   UserCheck,
-  CheckCircle,
   AlertCircle,
   Gamepad2,
-  ExternalLink,
+  RefreshCw,
+  Search,
 } from 'lucide-react';
 
 export default function OrdersView() {
@@ -21,6 +20,10 @@ export default function OrdersView() {
   const [customers, setCustomers] = useState([]);
   const [assignableAccounts, setAssignableAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Filters & Search
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   // Modals
   const [isAddOrderOpen, setIsAddOrderOpen] = useState(false);
@@ -36,7 +39,7 @@ export default function OrdersView() {
   const [accountId, setAccountId] = useState('');
   const [reassignReason, setReassignReason] = useState('');
 
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
     setLoading(true);
     try {
       const res = await api.get('/admin/orders');
@@ -55,11 +58,11 @@ export default function OrdersView() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [customerId, accountId]);
 
   useEffect(() => {
     loadOrders();
-  }, []);
+  }, [loadOrders]);
 
   const handleCreateOrder = async (e) => {
     e.preventDefault();
@@ -112,25 +115,75 @@ export default function OrdersView() {
     }
   };
 
+  // Filtered orders
+  const filteredOrders = orders.filter((ord) => {
+    const matchesSearch =
+      ord.external_reference?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ord.customer_name?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      statusFilter === 'all' || ord.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.65rem', fontWeight: 800, marginBottom: '0.35rem' }}>
+          <h2 style={{ fontSize: '1.85rem', fontWeight: 900, marginBottom: '0.35rem', color: '#fff' }}>
             {t('orders')}
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            إدارة الطلبات وربطها بالعملاء وحسابات Steam
+          <p style={{ color: 'var(--m)', fontSize: '0.95rem' }}>
+            إدارة طلبات العملاء وتخصيص حسابات Steam واستخراج روابط التفعيل
           </p>
         </div>
 
-        <button onClick={() => { setErrorMsg(null); setIsAddOrderOpen(true); }} className="btn btn-primary">
+        <button
+          onClick={() => { setErrorMsg(null); setIsAddOrderOpen(true); }}
+          className="btn-neon"
+          style={{ width: 'auto', minHeight: 48, padding: '0 24px', fontSize: '1rem' }}
+        >
           <Plus size={18} />
           <span>{t('add_order')}</span>
         </button>
       </div>
 
-      {/* Orders Table */}
+      {/* Search & Filter Bar */}
+      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ position: 'relative', flex: '1 1 260px' }}>
+          <Search size={18} style={{ position: 'absolute', insetInlineStart: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--m)' }} />
+          <input
+            type="text"
+            className="in"
+            style={{ paddingInlineStart: 42, minHeight: 48 }}
+            placeholder="بحث برقم الطلب أو اسم العميل..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {['all', 'activated', 'pending', 'revoked'].map((st) => (
+            <button
+              key={st}
+              type="button"
+              onClick={() => setStatusFilter(st)}
+              className={`btn-alt ${statusFilter === st ? 'active' : ''}`}
+              style={{
+                minHeight: 44,
+                padding: '0 16px',
+                fontSize: '0.85rem',
+                background: statusFilter === st ? 'rgba(200, 249, 32, 0.2)' : 'rgba(30, 27, 67, 0.5)',
+                borderColor: statusFilter === st ? 'var(--p)' : 'var(--line)',
+                color: statusFilter === st ? 'var(--p)' : 'var(--m)',
+              }}
+            >
+              {st === 'all' ? t('all') : st === 'activated' ? 'مفعّل' : st === 'pending' ? 'معلق' : 'ملغي'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Orders Table Container */}
       <div className="table-container">
         <table className="modern-table">
           <thead>
@@ -146,31 +199,34 @@ export default function OrdersView() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="6" style={{ textAlign: 'center', padding: '2rem' }}>
-                  جاري تحميل الطلبات...
+                <td colSpan="6" style={{ textAlign: 'center', padding: '3rem', color: 'var(--m)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem' }}>
+                    <RefreshCw size={18} className="animate-spin" color="var(--p)" />
+                    <span>جاري تحميل الطلبات...</span>
+                  </div>
                 </td>
               </tr>
-            ) : orders.length === 0 ? (
+            ) : filteredOrders.length === 0 ? (
               <tr>
-                <td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                  لا توجد طلبات مسجلة بعد
+                <td colSpan="6" style={{ textAlign: 'center', padding: '3rem', color: 'var(--m)' }}>
+                  لا توجد طلبات مطابقة للمعايير المحددة
                 </td>
               </tr>
             ) : (
-              orders.map((ord) => (
+              filteredOrders.map((ord) => (
                 <tr key={ord.id}>
-                  <td style={{ fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                  <td style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--p)' }}>
                     {ord.external_reference}
                   </td>
-                  <td>{ord.customer_name}</td>
+                  <td style={{ fontWeight: 600 }}>{ord.customer_name}</td>
                   <td>
                     {ord.assignment ? (
-                      <span className="badge badge-info" style={{ gap: '0.35rem', fontFamily: 'var(--font-mono)' }}>
+                      <span className="badge badge-info" style={{ gap: '0.4rem', fontFamily: 'var(--font-mono)' }}>
                         <Gamepad2 size={13} />
                         <span>{ord.assignment.account_identifier}</span>
                       </span>
                     ) : (
-                      <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>لم يخصص حساب</span>
+                      <span style={{ color: 'var(--m)', fontSize: '0.85rem' }}>لم يُخصص حساب</span>
                     )}
                   </td>
                   <td>
@@ -182,15 +238,16 @@ export default function OrdersView() {
                       <span className="badge badge-neutral">{ord.status}</span>
                     )}
                   </td>
-                  <td style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  <td style={{ color: 'var(--m)', fontSize: '0.85rem' }}>
                     {ord.created_at ? new Date(ord.created_at).toLocaleDateString('ar-EG') : '—'}
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <button
                         onClick={() => openAssignModal(ord)}
-                        className="btn btn-secondary btn-sm"
-                        title={ord.assignment ? 'إعادة تخصيص حساب' : 'تخصيص حساب'}
+                        className="btn-alt"
+                        style={{ minHeight: 36, padding: '0 12px', fontSize: '0.8rem', gap: '0.35rem' }}
+                        title={ord.assignment ? 'تغيير الحساب المخصص' : 'تخصيص حساب'}
                       >
                         <UserCheck size={14} />
                         <span>{ord.assignment ? 'تغيير' : 'تخصيص'}</span>
@@ -198,10 +255,12 @@ export default function OrdersView() {
 
                       <button
                         onClick={() => handleGenerateLink(ord)}
-                        className="btn btn-ghost btn-sm"
-                        title="رابط التفعيل الموحد"
+                        className="btn-alt"
+                        style={{ minHeight: 36, padding: '0 12px', fontSize: '0.8rem', gap: '0.35rem' }}
+                        title="رابط العميل الموحد"
                       >
-                        <Link size={14} color="var(--accent-secondary)" />
+                        <Link size={14} />
+                        <span>الرابط</span>
                       </button>
                     </div>
                   </td>
@@ -215,17 +274,18 @@ export default function OrdersView() {
       {/* Create Order Modal */}
       <Modal isOpen={isAddOrderOpen} onClose={() => setIsAddOrderOpen(false)} title="إنشاء طلب جديد">
         {errorMsg && (
-          <div className="alert alert-danger">
+          <div className="alert-neon" role="alert">
             <AlertCircle size={16} />
             <span>{errorMsg}</span>
           </div>
         )}
         <form onSubmit={handleCreateOrder}>
-          <div className="form-group">
-            <label className="form-label">{t('order_number')}</label>
+          <div className="field">
+            <label className="lbl" htmlFor="new_order_ref">{t('order_number')}</label>
             <input
+              id="new_order_ref"
               type="text"
-              className="form-input"
+              className="in"
               placeholder="مثال: ORD-10023 أو 85472"
               value={orderRef}
               onChange={(e) => setOrderRef(e.target.value)}
@@ -233,10 +293,11 @@ export default function OrdersView() {
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">العميل</label>
+          <div className="field">
+            <label className="lbl" htmlFor="new_order_customer">العميل</label>
             <select
-              className="form-select"
+              id="new_order_customer"
+              className="in"
               value={customerId}
               onChange={(e) => setCustomerId(e.target.value)}
               required
@@ -249,11 +310,11 @@ export default function OrdersView() {
             </select>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
-            <button type="button" onClick={() => setIsAddOrderOpen(false)} className="btn btn-secondary">
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+            <button type="button" onClick={() => setIsAddOrderOpen(false)} className="btn-alt">
               {t('cancel')}
             </button>
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn-neon" style={{ width: 'auto', minHeight: 48, padding: '0 24px' }}>
               {t('save')}
             </button>
           </div>
@@ -263,16 +324,17 @@ export default function OrdersView() {
       {/* Assign Account Modal */}
       <Modal isOpen={isAssignOpen} onClose={() => setIsAssignOpen(false)} title={`تخصيص حساب للطلب [${selectedOrder?.external_reference}]`}>
         {errorMsg && (
-          <div className="alert alert-danger">
+          <div className="alert-neon" role="alert">
             <AlertCircle size={16} />
             <span>{errorMsg}</span>
           </div>
         )}
         <form onSubmit={handleAssignSubmit}>
-          <div className="form-group">
-            <label className="form-label">اختر حساب المخزون</label>
+          <div className="field">
+            <label className="lbl" htmlFor="assign_account_select">اختر حساب المخزون</label>
             <select
-              className="form-select"
+              id="assign_account_select"
+              className="in"
               value={accountId}
               onChange={(e) => setAccountId(e.target.value)}
               required
@@ -286,23 +348,24 @@ export default function OrdersView() {
           </div>
 
           {selectedOrder?.assignment && (
-            <div className="form-group">
-              <label className="form-label">سبب إعادة التخصيص</label>
+            <div className="field">
+              <label className="lbl" htmlFor="reassign_reason">سبب إعادة التخصيص</label>
               <input
+                id="reassign_reason"
                 type="text"
-                className="form-input"
-                placeholder="مثال: مشكلة في الحساب السابق أو طلب العميل"
+                className="in"
+                placeholder="مثال: مشكلة في الحساب السابق أو استبدال بطلب العميل"
                 value={reassignReason}
                 onChange={(e) => setReassignReason(e.target.value)}
               />
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
-            <button type="button" onClick={() => setIsAssignOpen(false)} className="btn btn-secondary">
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+            <button type="button" onClick={() => setIsAssignOpen(false)} className="btn-alt">
               {t('cancel')}
             </button>
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn-neon" style={{ width: 'auto', minHeight: 48, padding: '0 24px' }}>
               تأكيد التخصيص
             </button>
           </div>
@@ -311,30 +374,31 @@ export default function OrdersView() {
 
       {/* Link Modal */}
       <Modal isOpen={isLinkOpen} onClose={() => setIsLinkOpen(false)} title="رابط العميل الموحد">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', textAlign: 'center' }}>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            يمكن للعميل فتح الرابط الموحد وإدخال رقم الطلب واسم المستخدم لاستلام الكود مباشرة
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', textAlign: 'center' }}>
+          <p style={{ color: 'var(--m)', fontSize: '0.95rem' }}>
+            يمكن للعميل فتح هذا الرابط وإدخال رقم الطلب واسم المستخدم لاستخراج رمز التحقق فوراً
           </p>
 
           <div
             style={{
-              padding: '1rem',
-              background: 'rgba(0,0,0,0.4)',
-              border: '1px solid var(--border-subtle)',
+              padding: '1.25rem',
+              background: 'rgba(10, 12, 50, 0.7)',
+              border: '1.5px solid var(--p)',
               borderRadius: 'var(--radius-md)',
               fontFamily: 'var(--font-mono)',
-              fontSize: '0.95rem',
+              fontSize: '1rem',
               wordBreak: 'break-all',
-              color: '#38bdf8',
+              color: 'var(--p)',
+              boxShadow: '0 0 25px rgba(200, 249, 32, 0.15)',
             }}
           >
             {generatedLink}
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
-            <CopyButton text={generatedLink} className="btn btn-primary" />
-            <button type="button" onClick={() => setIsLinkOpen(false)} className="btn btn-secondary">
-              إغلاق
+            <CopyButton text={generatedLink} className="btn-neon" label="نسخ الرابط" />
+            <button type="button" onClick={() => setIsLinkOpen(false)} className="btn-alt">
+              {t('close')}
             </button>
           </div>
         </div>

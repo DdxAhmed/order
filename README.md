@@ -60,7 +60,7 @@ $env:PYTHONUTF8=1
 ### إنشاء مشرف جديد
 ```powershell
 $env:PYTHONUTF8=1
-.\.venv\Scripts\python.exe -m app.cli create-admin --email admin@ordertrofy.store --role owner --password "YourStrongPassword!"
+.\.venv\Scripts\python.exe -m app.cli create-admin --email admin@ordertrofy.store --password "YourStrongPassword!"
 ```
 
 ### تغيير كلمة مرور مسؤول حالي بأمان

@@ -9,9 +9,8 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Key,
-  ShieldCheck,
   RefreshCw,
+  Power,
 } from 'lucide-react';
 
 export default function MailboxesView() {
@@ -95,38 +94,39 @@ export default function MailboxesView() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.65rem', fontWeight: 800, marginBottom: '0.35rem' }}>
+          <h2 style={{ fontSize: '1.85rem', fontWeight: 900, marginBottom: '0.35rem', color: '#fff' }}>
             {t('mailboxes')}
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            إدارة صناديق IMAP وتفويض Microsoft Graph لاستخراج أكواد Steam
+          <p style={{ color: 'var(--m)', fontSize: '0.95rem' }}>
+            إدارة صناديق IMAP وتفويضات Microsoft Graph المخصصة لاستقبال أكواد Steam
           </p>
         </div>
 
-        <button onClick={() => { setErrorMsg(null); setIsAddOpen(true); }} className="btn btn-primary">
+        <button
+          onClick={() => { setErrorMsg(null); setIsAddOpen(true); }}
+          className="btn-neon"
+          style={{ width: 'auto', minHeight: 48, padding: '0 24px', fontSize: '1rem' }}
+        >
           <Plus size={18} />
           <span>{t('add_mailbox')}</span>
         </button>
       </div>
 
       {/* Mailbox Cards Grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '1.25rem',
-        }}
-      >
+      <div className="responsive-split-grid">
         {loading ? (
-          <div style={{ padding: '2rem', textAlign: 'center', gridColumn: '1 / -1' }}>
-            جاري تحميل صناديق البريد...
+          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--m)', gridColumn: '1 / -1' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem' }}>
+              <RefreshCw size={18} className="animate-spin" color="var(--p)" />
+              <span>جاري تحميل صناديق البريد...</span>
+            </div>
           </div>
         ) : mailboxes.length === 0 ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', gridColumn: '1 / -1' }}>
-            لا يوجد صناديق بريد مضافة بعد
+          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--m)', gridColumn: '1 / -1' }}>
+            لا توجد صناديق بريد مضافة بعد. أضف صندوق IMAP للبدء في استلام أكواد Steam تلقائيًا.
           </div>
         ) : (
           mailboxes.map((m) => {
@@ -134,32 +134,48 @@ export default function MailboxesView() {
             const currentTest = testResult?.id === m.id ? testResult : null;
 
             return (
-              <div key={m.id} className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div
+                key={m.id}
+                className="card-neon"
+                style={{
+                  padding: '1.75rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1.25rem',
+                }}
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
                     <div
                       style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 'var(--radius-md)',
-                        background: m.is_active ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
+                        width: 48,
+                        height: 48,
+                        borderRadius: '16px',
+                        background: 'rgba(200, 249, 32, 0.12)',
+                        border: '1px solid rgba(200, 249, 32, 0.4)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        color: m.is_active ? 'var(--success)' : 'var(--danger)',
+                        color: 'var(--p)',
+                        boxShadow: '0 0 20px rgba(200, 249, 32, 0.2)',
                       }}
                     >
-                      <Mail size={22} />
+                      <Mail size={24} />
                     </div>
                     <div>
-                      <h4 style={{ fontSize: '1.05rem', fontWeight: 700 }}>{m.label}</h4>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{m.username}</span>
+                      <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#fff' }}>{m.label}</h3>
+                      <span style={{ fontSize: '0.825rem', color: 'var(--m)' }}>
+                        {m.auth_mode === 'oauth_microsoft' ? 'Microsoft OAuth2 (Graph)' : 'Standard IMAP / SSL'}
+                      </span>
                     </div>
                   </div>
 
                   <div>
                     {m.is_active ? (
-                      <span className="badge badge-success">نشط</span>
+                      <span className="badge badge-success">
+                        <Radio size={12} className="animate-spin" />
+                        <span>نشط ومفعّل</span>
+                      </span>
                     ) : (
                       <span className="badge badge-danger">معطل</span>
                     )}
@@ -168,55 +184,61 @@ export default function MailboxesView() {
 
                 <div
                   style={{
-                    padding: '0.75rem',
-                    background: 'rgba(0,0,0,0.25)',
-                    borderRadius: 'var(--radius-sm)',
-                    fontSize: '0.85rem',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.35rem',
+                    padding: '1rem',
+                    borderRadius: '12px',
+                    background: 'rgba(10, 12, 50, 0.5)',
+                    border: '1px solid var(--line)',
+                    display: 'grid',
+                    gap: '0.5rem',
+                    fontSize: '0.875rem',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>البروتوكول:</span>
-                    <span style={{ fontWeight: 600 }}>{m.auth_mode === 'microsoft_graph' ? 'Microsoft Graph (OAuth2)' : 'IMAP over TLS'}</span>
+                    <span style={{ color: 'var(--m)' }}>الخادم:</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{m.host}:{m.port}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>المستضيف:</span>
-                    <span style={{ fontFamily: 'var(--font-mono)' }}>{m.host}:{m.port}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>الحسابات المربوطة:</span>
-                    <span className="badge badge-info" style={{ padding: '0.1rem 0.5rem' }}>{m.accounts_count} حساب</span>
+                    <span style={{ color: 'var(--m)' }}>اسم المستخدم:</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{m.username}</span>
                   </div>
                 </div>
 
+                {/* Connection Test Result Feedback */}
                 {currentTest && (
                   <div
-                    className={`alert ${currentTest.success ? 'alert-success' : 'alert-danger'}`}
-                    style={{ padding: '0.65rem 0.85rem', fontSize: '0.825rem', marginBottom: 0 }}
+                    className={`alert-neon ${currentTest.success ? 'alert-success' : ''}`}
+                    style={{ margin: 0, padding: '10px 14px', fontSize: '0.85rem' }}
                   >
-                    {currentTest.success ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
+                    {currentTest.success ? <CheckCircle size={15} /> : <XCircle size={15} />}
                     <span>{currentTest.message}</span>
                   </div>
                 )}
 
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto', paddingTop: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.65rem', marginTop: 'auto' }}>
                   <button
+                    type="button"
                     onClick={() => handleTestConnection(m)}
                     disabled={isTesting}
-                    className="btn btn-secondary btn-sm"
-                    style={{ flex: 1 }}
+                    className="btn-alt"
+                    style={{ flex: 1, minHeight: 42, fontSize: '0.85rem', gap: '0.45rem' }}
                   >
                     <RefreshCw size={14} className={isTesting ? 'animate-spin' : ''} />
-                    <span>{isTesting ? 'جاري الفحص...' : 'فحص الاتصال'}</span>
+                    <span>{isTesting ? t('testing') : t('test_connection')}</span>
                   </button>
 
                   <button
+                    type="button"
                     onClick={() => handleToggleDisable(m)}
-                    className={`btn btn-sm ${m.is_active ? 'btn-ghost' : 'btn-success'}`}
+                    className="btn-alt"
+                    style={{
+                      minHeight: 42,
+                      padding: '0 14px',
+                      color: m.is_active ? '#ff8787' : 'var(--p)',
+                      borderColor: m.is_active ? 'rgba(255,107,107,0.4)' : 'var(--p)',
+                    }}
+                    title={m.is_active ? 'تعطيل هذا الصندوق' : 'تفعيل الصندوق'}
                   >
-                    <span>{m.is_active ? 'تعطيل' : 'تفعيل'}</span>
+                    <Power size={15} />
                   </button>
                 </div>
               </div>
@@ -226,43 +248,46 @@ export default function MailboxesView() {
       </div>
 
       {/* Add Mailbox Modal */}
-      <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="إضافة صندوق بريد IMAP">
+      <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="إضافة صندوق بريد IMAP جديد">
         {errorMsg && (
-          <div className="alert alert-danger">
+          <div className="alert-neon" role="alert">
             <AlertCircle size={16} />
             <span>{errorMsg}</span>
           </div>
         )}
         <form onSubmit={handleCreateMailbox}>
-          <div className="form-group">
-            <label className="form-label">اسم تمييزي للصندوق</label>
+          <div className="field">
+            <label className="lbl" htmlFor="mb_label">اسم أو تسمية الصندوق (Label)</label>
             <input
+              id="mb_label"
               type="text"
-              className="form-input"
-              placeholder="مثال: Steam-Mailbox-01"
+              className="in"
+              placeholder="مثال: primary-imap أو steam-mailbox"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               required
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.75rem' }}>
-            <div className="form-group">
-              <label className="form-label">مستضيف IMAP</label>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
+            <div className="field">
+              <label className="lbl" htmlFor="mb_host">خادم IMAP (Host)</label>
               <input
+                id="mb_host"
                 type="text"
-                className="form-input"
-                placeholder="imap.mail.me.com أو imap.gmail.com"
+                className="in"
+                placeholder="imap.example.com"
                 value={host}
                 onChange={(e) => setHost(e.target.value)}
                 required
               />
             </div>
-            <div className="form-group">
-              <label className="form-label">المنفذ</label>
+            <div className="field">
+              <label className="lbl" htmlFor="mb_port">المنفذ (Port)</label>
               <input
+                id="mb_port"
                 type="number"
-                className="form-input"
+                className="in"
                 value={port}
                 onChange={(e) => setPort(e.target.value)}
                 required
@@ -270,23 +295,25 @@ export default function MailboxesView() {
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">عنوان البريد الإلكتروني</label>
+          <div className="field">
+            <label className="lbl" htmlFor="mb_username">عنوان البريد / المستخدم</label>
             <input
+              id="mb_username"
               type="email"
-              className="form-input"
-              placeholder="steam-box@example.com"
+              className="in"
+              placeholder="mailbox@ordertrofy.store"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">كلمة المرور أو App Password (تُحفظ مشفرة)</label>
+          <div className="field">
+            <label className="lbl" htmlFor="mb_pass">كلمة مرور التطبيق (App Password)</label>
             <input
+              id="mb_pass"
               type="password"
-              className="form-input"
+              className="in"
               placeholder="••••••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -294,21 +321,22 @@ export default function MailboxesView() {
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">مجلد البريد</label>
+          <div className="field">
+            <label className="lbl" htmlFor="mb_folder">مجلد البريد (Folder)</label>
             <input
+              id="mb_folder"
               type="text"
-              className="form-input"
+              className="in"
               value={mailFolder}
               onChange={(e) => setMailFolder(e.target.value)}
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
-            <button type="button" onClick={() => setIsAddOpen(false)} className="btn btn-secondary">
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+            <button type="button" onClick={() => setIsAddOpen(false)} className="btn-alt">
               {t('cancel')}
             </button>
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn-neon" style={{ width: 'auto', minHeight: 48, padding: '0 24px' }}>
               {t('save')}
             </button>
           </div>

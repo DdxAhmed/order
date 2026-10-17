@@ -11,9 +11,10 @@ import {
   FileSpreadsheet,
   Store,
   History,
+  ShieldCheck,
 } from 'lucide-react';
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }) {
   const { t } = useLang();
   const { currentPath, navigate } = useRouter();
 
@@ -29,70 +30,50 @@ export default function Sidebar() {
     { path: '/admin/audit', label: t('audit'), icon: History },
   ];
 
+  const handleItemClick = (path) => {
+    navigate(path);
+    if (onClose) onClose();
+  };
+
   return (
-    <aside
-      style={{
-        width: 250,
-        flexShrink: 0,
-        background: 'rgba(15, 23, 42, 0.7)',
-        backdropFilter: 'blur(16px)',
-        borderLeft: '1px solid var(--border-subtle)',
-        borderRight: '1px solid var(--border-subtle)',
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '1.25rem 0.85rem',
-        minHeight: 'calc(100vh - 65px)',
-      }}
-    >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+    <aside className={`admin-sidebar ${isOpen ? 'open' : ''}`}>
+      <div className="admin-sidebar-drawer">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = currentPath === item.path || (item.path === '/admin' && currentPath === '/admin/');
+
           return (
             <button
               key={item.path}
-              onClick={() => navigate(item.path)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem',
-                padding: '0.7rem 0.95rem',
-                borderRadius: 'var(--radius-md)',
-                fontSize: '0.9rem',
-                fontWeight: isActive ? 700 : 500,
-                color: isActive ? '#ffffff' : 'var(--text-secondary)',
-                background: isActive
-                  ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(99, 102, 241, 0.08) 100%)'
-                  : 'transparent',
-                border: isActive
-                  ? '1px solid rgba(99, 102, 241, 0.35)'
-                  : '1px solid transparent',
-                textAlign: 'inherit',
-                transition: 'all 0.2s ease',
-                width: '100%',
-                cursor: 'pointer',
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-                  e.currentTarget.style.color = 'var(--text-primary)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'var(--text-secondary)';
-                }
-              }}
+              type="button"
+              onClick={() => handleItemClick(item.path)}
+              className={`sidebar-nav-item ${isActive ? 'active' : ''}`}
             >
               <Icon
                 size={18}
+                className="nav-icon"
                 color={isActive ? 'var(--accent-primary)' : 'var(--text-muted)'}
               />
               <span>{item.label}</span>
             </button>
           );
         })}
+      </div>
+
+      <div
+        style={{
+          marginTop: 'auto',
+          paddingTop: '1.25rem',
+          borderTop: '1px solid var(--border-subtle)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.65rem',
+          fontSize: '0.775rem',
+          color: 'var(--text-muted)',
+        }}
+      >
+        <ShieldCheck size={14} color="var(--success)" />
+        <span>OrderTrofy v1.2 • نظام آمن</span>
       </div>
     </aside>
   );

@@ -26,13 +26,11 @@ async def get_current_admin(
     request: Request,
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> tuple[AdminUser, AdminSession]:
-    token = request.cookies.get("admin_session")
+    token = request.headers.get("x-admin-session") or request.cookies.get("admin_session")
     if not token and "authorization" in request.headers:
         auth = request.headers.get("authorization", "")
         if auth.startswith("Bearer "):
             token = auth.split("Bearer ", 1)[1].strip()
-    if not token and "x-admin-session" in request.headers:
-        token = request.headers.get("x-admin-session")
 
     found = await get_admin_session(session, token)
     if not found:
@@ -62,13 +60,11 @@ async def get_current_customer(
     request: Request,
     session: Annotated[AsyncSession, Depends(get_db_session)],
 ) -> tuple[Customer, CustomerSession]:
-    token = request.cookies.get("customer_session")
+    token = request.headers.get("x-customer-session") or request.cookies.get("customer_session")
     if not token and "authorization" in request.headers:
         auth = request.headers.get("authorization", "")
         if auth.startswith("Bearer "):
             token = auth.split("Bearer ", 1)[1].strip()
-    if not token and "x-customer-session" in request.headers:
-        token = request.headers.get("x-customer-session")
 
     found = await get_customer_web_session(session, token)
     if not found:

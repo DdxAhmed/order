@@ -8,7 +8,12 @@ from app.services.access import get_admin_session
 
 
 async def current_admin(request: Request, session: AsyncSession) -> tuple[AdminUser, AdminSession]:
-    found = await get_admin_session(session, request.cookies.get("admin_session"))
+    token = request.headers.get("x-admin-session") or request.cookies.get("admin_session")
+    if not token and "authorization" in request.headers:
+        auth = request.headers.get("authorization", "")
+        if auth.startswith("Bearer "):
+            token = auth.split("Bearer ", 1)[1].strip()
+    found = await get_admin_session(session, token)
     if not found:
         raise HTTPException(status_code=401, detail="يلزم تسجيل الدخول")
     return found

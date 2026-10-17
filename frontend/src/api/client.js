@@ -1,4 +1,5 @@
 // API Client for OrderTrofy
+// Centralized configuration supporting both development proxy and direct/deployed API URL
 
 const rawBaseUrl = (import.meta.env.VITE_API_URL || '/api/v1').trim();
 const BASE_URL = rawBaseUrl.replace(/\/+$/, '');
@@ -32,6 +33,7 @@ class ApiClient {
     const url = (endpoint.startsWith('http://') || endpoint.startsWith('https://'))
       ? endpoint
       : `${BASE_URL}${cleanEndpoint}`;
+
     const headers = {
       ...options.headers,
     };
@@ -40,12 +42,18 @@ class ApiClient {
       headers['Content-Type'] = 'application/json';
     }
 
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
-      headers['X-Admin-Session'] = this.token;
-    }
-    if (this.customerToken) {
-      headers['X-Customer-Session'] = this.customerToken;
+    // Isolate credentials: pass customer session for customer routes, and admin session for admin/auth routes
+    const isCustomerRoute = cleanEndpoint.startsWith('/customer');
+    if (isCustomerRoute) {
+      if (this.customerToken) {
+        headers['X-Customer-Session'] = this.customerToken;
+        headers['Authorization'] = `Bearer ${this.customerToken}`;
+      }
+    } else {
+      if (this.token) {
+        headers['X-Admin-Session'] = this.token;
+        headers['Authorization'] = `Bearer ${this.token}`;
+      }
     }
 
     const config = {
@@ -65,16 +73,27 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        const errorDetail =
+        let errorDetail =
           (data && data.detail) ||
           (data && data.message) ||
           response.statusText ||
           'حدث خطأ في الاتصال بالخادم';
-        throw new Error(typeof errorDetail === 'object' ? JSON.stringify(errorDetail) : errorDetail);
+
+        if (Array.isArray(errorDetail)) {
+          errorDetail = errorDetail.map((item) => item.msg || JSON.stringify(item)).join(' | ');
+        } else if (typeof errorDetail === 'object') {
+          errorDetail = JSON.stringify(errorDetail);
+        }
+
+        throw new Error(errorDetail);
       }
 
       return data;
     } catch (err) {
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        console.error(`Network Error [${endpoint}]:`, err.message);
+        throw new Error('تعذر الاتصال بالخادم. يرجى التأكد من تشغيل الخادم والاتصال بالشبكة.');
+      }
       console.error(`API Error [${endpoint}]:`, err.message);
       throw err;
     }
@@ -84,7 +103,7 @@ class ApiClient {
     return this.request(endpoint, { ...options, method: 'GET' });
   }
 
-  post(endpoint, body, options = {}) {
+  post(endpoint, body = {}, options = {}) {
     const isFormData = body instanceof FormData;
     return this.request(endpoint, {
       ...options,
@@ -93,7 +112,7 @@ class ApiClient {
     });
   }
 
-  put(endpoint, body, options = {}) {
+  put(endpoint, body = {}, options = {}) {
     const isFormData = body instanceof FormData;
     return this.request(endpoint, {
       ...options,

@@ -1,56 +1,90 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useLang } from '../../context/LangContext';
 import CopyButton from '../../components/CopyButton';
 import {
   Gamepad2,
-  Key,
-  ShieldCheck,
   RefreshCw,
-  Clock,
-  Sparkles,
   AlertCircle,
   CheckCircle2,
   Lock,
+  ArrowRight,
+  ShieldCheck,
+  Key,
+  Clock,
+  Sparkles,
 } from 'lucide-react';
 
 export default function CustomerPortal() {
   const { customerSession, customerLogin, customerLogout } = useAuth();
-  const { t } = useLang();
+  const { t, lang } = useLang();
 
-  // Access Form state
+  // Mode: 'credentials' (Order Ref + Account) vs 'token' (Activation Token)
+  const [accessMode, setAccessMode] = useState('credentials');
+
+  // Credentials Form state
+  const [platform, setPlatform] = useState('steam');
   const [orderRef, setOrderRef] = useState('');
   const [username, setUsername] = useState('');
-  const [platform, setPlatform] = useState('steam');
+
+  // Activation Token Form state
+  const [activationToken, setActivationToken] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
 
   // Portal Data state
   const [portalData, setPortalData] = useState(null);
-  const [portalLoading, setPortalLoading] = useState(false);
   const [verifyingId, setVerifyingId] = useState(null);
   const [pollInterval, setPollInterval] = useState(null);
 
+  // Check URL parameters and pathname on mount (e.g., ?activate=TOKEN or /activate/TOKEN or ?order=REF&user=USER)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tokenParam = params.get('activate') || params.get('token');
+    const orderParam = params.get('order');
+    const userParam = params.get('user');
+
+    const path = window.location.pathname || '';
+    const pathTokenMatch = path.match(/^\/activate\/([^\s/?#]+)/i);
+    const finalToken = tokenParam || (pathTokenMatch ? pathTokenMatch[1] : null);
+
+    if (finalToken) {
+      setAccessMode('token');
+      setActivationToken(finalToken);
+    } else if (orderParam) {
+      setOrderRef(orderParam);
+      if (userParam) setUsername(userParam);
+    }
+  }, []);
+
   // Fetch portal details if session exists
-  const fetchPortalData = async () => {
+  const fetchPortalData = useCallback(async () => {
     try {
       const data = await api.get('/customer/portal');
       setPortalData(data);
       return data;
     } catch (err) {
-      console.warn('Portal session expired:', err.message);
+      console.warn('Portal session expired or invalid:', err.message);
       customerLogout();
     }
-  };
+  }, [customerLogout]);
 
   useEffect(() => {
     if (customerSession) {
       fetchPortalData();
     }
-  }, [customerSession]);
+  }, [customerSession, fetchPortalData]);
 
-  // Handle Login
+  // Clean up polling interval
+  useEffect(() => {
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+    };
+  }, [pollInterval]);
+
+  // Handle Credentials Access
   const handleAccessSubmit = async (e) => {
     e.preventDefault();
     if (!orderRef.trim() || !username.trim()) {
@@ -69,13 +103,36 @@ export default function CustomerPortal() {
       customerLogin(res.session_token, res);
       await fetchPortalData();
     } catch (err) {
-      setErrorMsg(err.message || 'بيانات الدخول غير صحيحة');
+      setErrorMsg(err.message || 'بيانات الدخول غير صحيحة أو الطلب غير موجود');
     } finally {
       setLoading(false);
     }
   };
 
-  // Trigger Code Verification
+  // Handle Token Activation
+  const handleActivationSubmit = async (e) => {
+    e.preventDefault();
+    if (!activationToken.trim()) {
+      setErrorMsg('الرجاء إدخال رمز أو رابط التفعيل');
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg(null);
+    try {
+      const res = await api.post('/customer/activate', {
+        activation_token: activationToken.trim(),
+      });
+      customerLogin(res.session_token, res);
+      await fetchPortalData();
+    } catch (err) {
+      setErrorMsg(err.message || 'رمز التفعيل غير صالح أو منتهي الصلاحية');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Trigger Code Verification for an Assignment
   const handleRequestCode = async (assignmentId) => {
     setVerifyingId(assignmentId);
     setErrorMsg(null);
@@ -83,7 +140,7 @@ export default function CustomerPortal() {
       await api.post(`/customer/assignments/${assignmentId}/verify`, {});
       await fetchPortalData();
 
-      // Start automatic polling every 4 seconds for 2 minutes
+      // Poll every 3.5 seconds up to 30 times (approx 105 seconds)
       if (pollInterval) clearInterval(pollInterval);
       let count = 0;
       const interval = setInterval(async () => {
@@ -94,7 +151,7 @@ export default function CustomerPortal() {
           clearInterval(interval);
           setVerifyingId(null);
         }
-      }, 4000);
+      }, 3500);
       setPollInterval(interval);
     } catch (err) {
       setErrorMsg(err.message || 'تعذر طلب الرمز حاليًا');
@@ -102,273 +159,412 @@ export default function CustomerPortal() {
     }
   };
 
-  // If customer is authenticated and portal data is available
+  // 1. Logged-in View: Customer Portal & OTP Retrieval
   if (customerSession && portalData) {
     return (
-      <div style={{ maxWidth: 760, margin: '2.5rem auto', padding: '0 1rem' }}>
-        <div
-          className="glass-panel"
-          style={{
-            padding: '2.25rem',
-            textAlign: 'center',
-            position: 'relative',
-          }}
-        >
-          <div
-            style={{
-              display: 'inline-flex',
-              padding: '0.45rem 1rem',
-              borderRadius: 'var(--radius-full)',
-              background: 'rgba(16, 185, 129, 0.1)',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-              color: 'var(--success)',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              marginBottom: '1rem',
-              alignItems: 'center',
-              gap: '0.4rem',
-            }}
-          >
-            <CheckCircle2 size={16} />
-            <span>طلب نشط وموثق</span>
+      <div className="wrap" style={{ gridTemplateColumns: '1fr', maxWidth: 860 }}>
+        <section className="card-neon">
+          <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+            <div
+              style={{
+                display: 'inline-flex',
+                padding: '0.45rem 1.1rem',
+                borderRadius: 'var(--radius-full)',
+                background: 'rgba(200, 249, 32, 0.14)',
+                border: '1.5px solid rgba(200, 249, 32, 0.5)',
+                color: 'var(--p)',
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                marginBottom: '1rem',
+                alignItems: 'center',
+                gap: '0.5rem',
+                boxShadow: '0 0 20px rgba(200, 249, 32, 0.25)',
+              }}
+            >
+              <CheckCircle2 size={18} />
+              <span>طلب نشط وموثق بنجاح</span>
+            </div>
+
+            <h2 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.2rem)', fontWeight: 900, marginBottom: '0.4rem' }}>
+              مرحباً {portalData.customer?.display_name || 'بعميلنا العزيز'}
+            </h2>
+            <p style={{ color: 'var(--m)', fontSize: '1rem' }}>
+              يمكنك استخراج رمز التحقق (Steam Guard) لحسابك مباشرة بنقرة واحدة
+            </p>
           </div>
 
-          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.4rem' }}>
-            مرحباً {portalData.customer?.display_name || 'بعميلنا العزيز'}
-          </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '2rem' }}>
-            يمكنك استخراج رمز التحقق لحساب Steam الخاص بك مباشرة من هذه البوابة
-          </p>
-
           {errorMsg && (
-            <div className="alert alert-danger" style={{ textAlign: 'right' }}>
+            <div className="alert-neon" role="alert">
               <AlertCircle size={18} />
               <span>{errorMsg}</span>
             </div>
           )}
 
-          {/* Assignments list */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            {portalData.assignments?.map((item) => {
-              const isVerifying = verifyingId === item.assignment_id;
-              const hasCode = !!item.verification_code;
+          {/* Assignments List */}
+          <div style={{ display: 'grid', gap: '1.25rem' }}>
+            {portalData.assignments && portalData.assignments.length > 0 ? (
+              portalData.assignments.map((item) => {
+                const isVerifying = verifyingId === item.assignment_id;
+                const hasCode = !!item.verification_code;
 
-              return (
-                <div
-                  key={item.assignment_id}
-                  style={{
-                    background: 'rgba(15, 23, 42, 0.8)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: 'var(--radius-lg)',
-                    padding: '1.5rem',
-                    textAlign: 'right',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '1rem',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                return (
+                  <div
+                    key={item.assignment_id}
+                    style={{
+                      background: 'rgba(10, 12, 50, 0.65)',
+                      border: '1.5px solid var(--line)',
+                      borderRadius: 'var(--radius-lg)',
+                      padding: '1.5rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '1.25rem',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                        <div
+                          style={{
+                            width: 46,
+                            height: 46,
+                            borderRadius: '14px',
+                            background: 'rgba(200, 249, 32, 0.12)',
+                            border: '1px solid rgba(200, 249, 32, 0.4)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--p)',
+                            boxShadow: '0 0 15px rgba(200, 249, 32, 0.2)',
+                          }}
+                        >
+                          <Gamepad2 size={24} />
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: '1.1rem' }}>
+                            حساب Steam المخصص
+                          </div>
+                          <div style={{ fontSize: '0.9rem', color: 'var(--m)', fontFamily: 'var(--font-mono)' }}>
+                            {item.account_identifier_masked}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        {hasCode ? (
+                          <span className="badge badge-success">
+                            <Sparkles size={13} />
+                            <span>الكود جاهز</span>
+                          </span>
+                        ) : isVerifying || item.current_status === 'processing' ? (
+                          <span className="badge badge-warning">
+                            <Clock size={13} className="animate-spin" />
+                            <span>جاري الفحص...</span>
+                          </span>
+                        ) : item.current_status === 'waiting_mail' ? (
+                          <span className="badge badge-info">
+                            <Clock size={13} />
+                            <span>بانتظار البريد</span>
+                          </span>
+                        ) : (
+                          <span className="badge badge-neutral">متاح للطلب</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Verification Code Box Display */}
+                    {hasCode ? (
                       <div
                         style={{
-                          width: 42,
-                          height: 42,
-                          borderRadius: 'var(--radius-md)',
-                          background: 'rgba(6, 182, 212, 0.15)',
+                          background: 'rgba(200, 249, 32, 0.08)',
+                          border: '1.5px solid rgba(200, 249, 32, 0.4)',
+                          borderRadius: 'var(--radius-lg)',
+                          padding: '1.75rem 1.25rem',
+                          textAlign: 'center',
                           display: 'flex',
+                          flexDirection: 'column',
                           alignItems: 'center',
-                          justifyContent: 'center',
-                          color: '#38bdf8',
+                          gap: '1rem',
                         }}
                       >
-                        <Gamepad2 size={22} />
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>
-                          حساب Steam المخصص
-                        </div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                          {item.account_identifier_masked}
-                        </div>
-                      </div>
-                    </div>
+                        <span style={{ fontSize: '0.95rem', color: 'var(--m)', fontWeight: 700 }}>
+                          رمز الدخول السريع (Steam Guard OTP)
+                        </span>
 
-                    <div>
-                      {item.current_status === 'succeeded' ? (
-                        <span className="badge badge-success">جاهز</span>
-                      ) : item.current_status === 'processing' || isVerifying ? (
-                        <span className="badge badge-warning">جاري الفحص</span>
-                      ) : item.current_status === 'waiting_mail' ? (
-                        <span className="badge badge-info">بانتظار البريد</span>
-                      ) : (
-                        <span className="badge badge-neutral">متاح للطلب</span>
-                      )}
-                    </div>
-                  </div>
+                        <div className="steam-otp-box">
+                          {item.verification_code}
+                        </div>
 
-                  {/* Verification Code Display */}
-                  {hasCode ? (
-                    <div
-                      style={{
-                        background: 'rgba(6, 182, 212, 0.08)',
-                        border: '1px solid rgba(6, 182, 212, 0.3)',
-                        borderRadius: 'var(--radius-md)',
-                        padding: '1.25rem',
-                        textAlign: 'center',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                      }}
-                    >
-                      <div style={{ fontSize: '0.875rem', color: '#7dd3fc', fontWeight: 600 }}>
-                        رمز التحقق (Steam Guard Code)
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
+                          <CopyButton
+                            text={item.verification_code}
+                            className="btn-alt"
+                            label="نسخ الكود"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRequestCode(item.assignment_id)}
+                            disabled={isVerifying}
+                            className="btn-alt"
+                          >
+                            <RefreshCw size={15} className={isVerifying ? 'animate-spin' : ''} />
+                            <span>طلب كود جديد</span>
+                          </button>
+                        </div>
+
+                        <p style={{ fontSize: '0.825rem', color: 'var(--m)', marginTop: '0.25rem' }}>
+                          ⚡ أدخل هذا الرمز في نافذة Steam لتسجيل الدخول فوراً
+                        </p>
                       </div>
-                      <div className="steam-code-box">
-                        {item.verification_code}
-                      </div>
-                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
-                        <CopyButton text={item.verification_code} className="btn btn-primary btn-sm" />
-                        <button
-                          onClick={() => handleRequestCode(item.assignment_id)}
-                          className="btn btn-secondary btn-sm"
-                          disabled={isVerifying}
-                        >
-                          <RefreshCw size={14} className={isVerifying ? 'animate-spin' : ''} />
-                          <span>طلب رمز جديد</span>
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                    ) : (
                       <button
+                        type="button"
                         onClick={() => handleRequestCode(item.assignment_id)}
                         disabled={isVerifying}
-                        className="btn btn-primary"
-                        style={{ width: '100%', padding: '0.85rem' }}
+                        className="btn-neon"
                       >
-                        <RefreshCw size={16} className={isVerifying ? 'animate-spin' : ''} />
+                        <RefreshCw size={20} className={isVerifying ? 'animate-spin' : ''} />
                         <span>
-                          {isVerifying ? 'جاري فحص صندوق البريد واستخراج الرمز...' : 'استخراج رمز التحقق الآن'}
+                          {isVerifying ? 'جاري فحص صندوق البريد واستخراج الرمز...' : 'استخراج كود التحقق الآن'}
                         </span>
                       </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--m)' }}>
+                لم يتم ربط حساب Steam بهذا الطلب بعد. يرجى التواصل مع الدعم.
+              </div>
+            )}
           </div>
 
-          <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center' }}>
-            <button onClick={customerLogout} className="btn btn-ghost btn-sm">
-              إغلاق الجلسة والعودة
+          <div className="sep"></div>
+
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <button
+              type="button"
+              onClick={customerLogout}
+              className="btn-alt"
+              style={{ fontSize: '0.9rem', minHeight: 42 }}
+            >
+              تسجيل الخروج والعودة
             </button>
           </div>
-        </div>
+        </section>
       </div>
     );
   }
 
-  // Public Entrance Login Form
+  // 2. Public Landing View: Exact User-Provided Design
   return (
-    <div style={{ maxWidth: 520, margin: '3.5rem auto', padding: '0 1rem' }}>
-      <div className="glass-panel" style={{ padding: '2.5rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div
-            style={{
-              width: 58,
-              height: 58,
-              borderRadius: 'var(--radius-lg)',
-              background: 'linear-gradient(135deg, var(--accent-primary) 0%, #06b6d4 100%)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 0 25px var(--accent-glow)',
-              marginBottom: '1rem',
-            }}
-          >
-            <Key size={30} color="#ffffff" />
-          </div>
-          <h2 style={{ fontSize: '1.65rem', fontWeight: 800, marginBottom: '0.4rem' }}>
-            بوابة استلام أكواد Steam
-          </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            أدخل رقم طلبك واسم مستخدم الحساب للحصول على كود التحقق فوراً
-          </p>
+    <div className="wrap">
+      {/* القسم الرئيسي (Hero Section) */}
+      <section className="hero">
+        <div className="logo-badge" aria-hidden="true">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
         </div>
 
+        <h1 className="hero-title">
+          خدمتك جاهزة<br />وتصلك في ثواني
+        </h1>
+
+        <p className="lead">
+          اختر منصتك، أدخل رقم طلبك وحسابك، وافتح الخدمة بأمان وسهولة واستلم كود الدخول فوراً.
+        </p>
+
+        <div className="chips">
+          <span className="chip">⚡ توصيل فوري</span>
+          <span className="chip">🔒 آمن ومحمي</span>
+          <span className="chip">🎮 جميع المنصات</span>
+        </div>
+
+        <ol className="steps">
+          <li>
+            <b>1</b>
+            <span>اختر المنصة التي تلعب عليها</span>
+          </li>
+          <li>
+            <b>2</b>
+            <span>أدخل رقم الطلب وحسابك أو رمز التفعيل</span>
+          </li>
+          <li>
+            <b>3</b>
+            <span>افتح الخدمة واستلم كود التحقق مباشرة</span>
+          </li>
+        </ol>
+      </section>
+
+      {/* بطاقة النموذج (Card with Spinning Border) */}
+      <section className="card-neon">
+        <h2>افتح خدمتك الآن</h2>
+
         {errorMsg && (
-          <div className="alert alert-danger">
+          <div className="alert-neon" role="alert">
             <AlertCircle size={18} />
             <span>{errorMsg}</span>
           </div>
         )}
 
-        <form onSubmit={handleAccessSubmit}>
-          <div className="form-group">
-            <label className="form-label">{t('order_number')}</label>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="مثال: 12345 أو ORD-987"
-              value={orderRef}
-              onChange={(e) => setOrderRef(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">{t('steam_user')}</label>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="اسم مستخدم Steam المسجل"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">{t('platform')}</label>
-            <select
-              className="form-select"
-              value={platform}
-              onChange={(e) => setPlatform(e.target.value)}
-            >
-              <option value="steam">Steam PC (ستيم)</option>
-            </select>
-          </div>
+        {/* Mode Switch Pills */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '22px' }}>
+          <button
+            type="button"
+            onClick={() => { setAccessMode('credentials'); setErrorMsg(null); }}
+            className={`btn-alt ${accessMode === 'credentials' ? 'active' : ''}`}
+            style={{
+              flex: 1,
+              minHeight: 44,
+              fontSize: '0.88rem',
+              background: accessMode === 'credentials' ? 'rgba(200, 249, 32, 0.18)' : 'rgba(10, 12, 50, 0.45)',
+              borderColor: accessMode === 'credentials' ? 'var(--p)' : 'var(--line)',
+              color: accessMode === 'credentials' ? 'var(--p)' : 'var(--m)',
+            }}
+          >
+            <span>{t('direct_access')}</span>
+          </button>
 
           <button
-            type="submit"
-            disabled={loading}
-            className="btn btn-primary"
-            style={{ width: '100%', padding: '0.9rem', marginTop: '1rem', fontSize: '1rem' }}
+            type="button"
+            onClick={() => { setAccessMode('token'); setErrorMsg(null); }}
+            className={`btn-alt ${accessMode === 'token' ? 'active' : ''}`}
+            style={{
+              flex: 1,
+              minHeight: 44,
+              fontSize: '0.88rem',
+              background: accessMode === 'token' ? 'rgba(200, 249, 32, 0.18)' : 'rgba(10, 12, 50, 0.45)',
+              borderColor: accessMode === 'token' ? 'var(--p)' : 'var(--line)',
+              color: accessMode === 'token' ? 'var(--p)' : 'var(--m)',
+            }}
           >
-            <ShieldCheck size={20} />
-            <span>{loading ? 'جاري التحقق...' : t('open_portal')}</span>
+            <span>{t('token_access')}</span>
           </button>
-        </form>
-
-        <div
-          style={{
-            marginTop: '1.75rem',
-            paddingTop: '1.25rem',
-            borderTop: '1px solid var(--border-subtle)',
-            textAlign: 'center',
-            fontSize: '0.8rem',
-            color: 'var(--text-muted)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.4rem',
-          }}
-        >
-          <Lock size={13} />
-          <span>جلسة آمنة مشفرة بدون مشاركة أي بيانات حساسة</span>
         </div>
-      </div>
+
+        {accessMode === 'credentials' ? (
+          /* Form 1: Order Reference & Steam Account */
+          <form onSubmit={handleAccessSubmit} id="accessForm">
+            {/* اختيار المنصة */}
+            <div className="field">
+              <span className="lbl" id="platLbl">اختر منصتك</span>
+              <div className="plats" role="radiogroup" aria-labelledby="platLbl">
+                <label className="plat">
+                  <input
+                    type="radio"
+                    name="platform_code"
+                    value="steam"
+                    checked={platform === 'steam'}
+                    onChange={(e) => setPlatform(e.target.value)}
+                    required
+                  />
+                  <span>Steam PC</span>
+                </label>
+
+                <label className="plat">
+                  <input
+                    type="radio"
+                    name="platform_code"
+                    value="ubisoft"
+                    checked={platform === 'ubisoft'}
+                    onChange={(e) => setPlatform(e.target.value)}
+                  />
+                  <span>Ubisoft</span>
+                </label>
+
+                <label className="plat">
+                  <input
+                    type="radio"
+                    name="platform_code"
+                    value="rockstar"
+                    checked={platform === 'rockstar'}
+                    onChange={(e) => setPlatform(e.target.value)}
+                  />
+                  <span>Rockstar Games</span>
+                </label>
+              </div>
+            </div>
+
+            {/* رقم الطلب */}
+            <div className="field">
+              <label className="lbl" htmlFor="order_reference">
+                رقم الطلب الخاص بك
+              </label>
+              <input
+                className="in"
+                id="order_reference"
+                name="order_reference"
+                autoComplete="off"
+                required
+                maxLength={120}
+                placeholder="أدخل رقم طلبك (مثال: ORD-10023 أو 1234)"
+                value={orderRef}
+                onChange={(e) => setOrderRef(e.target.value)}
+              />
+            </div>
+
+            {/* الحساب على المنصة */}
+            <div className="field">
+              <label className="lbl" htmlFor="account_alias">
+                حسابك على المنصة
+              </label>
+              <input
+                className="in"
+                id="account_alias"
+                name="account_alias"
+                autoComplete="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                required
+                maxLength={255}
+                placeholder="اسم الحساب أو المعرّف في Steam"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+
+            {/* زر فتح الخدمة النيون */}
+            <button type="submit" className="btn-neon" id="submitBtn" disabled={loading}>
+              <span>{loading ? 'جاري فتح الخدمة...' : 'فتح الخدمة'}</span>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.2" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d={lang === 'ar' ? 'M11 17l-5-5m0 0l5-5m-5 5h12' : 'M13 7l5 5m0 0l-5 5m5-5H6'} />
+              </svg>
+            </button>
+          </form>
+        ) : (
+          /* Form 2: Activation Token */
+          <form onSubmit={handleActivationSubmit} id="tokenForm">
+            <div className="field">
+              <label className="lbl" htmlFor="activation_token">
+                {t('activation_token')}
+              </label>
+              <input
+                className="in"
+                id="activation_token"
+                name="activation_token"
+                autoComplete="off"
+                required
+                maxLength={255}
+                placeholder="أدخل رمز أو رابط التفعيل الموحد"
+                value={activationToken}
+                onChange={(e) => setActivationToken(e.target.value)}
+              />
+            </div>
+
+            <button type="submit" className="btn-neon" disabled={loading}>
+              <span>{loading ? 'جاري تفعيل الطلب...' : t('activate_order')}</span>
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.2" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d={lang === 'ar' ? 'M11 17l-5-5m0 0l5-5m-5 5h12' : 'M13 7l5 5m0 0l-5 5m5-5H6'} />
+              </svg>
+            </button>
+          </form>
+        )}
+
+        <div className="sep"></div>
+
+        <p className="note">
+          🔒 رقم الطلب مرجع محلي للاستخدام ولا نطلب كلمة مرور أو رمز دخول شخصي.
+        </p>
+      </section>
     </div>
   );
 }

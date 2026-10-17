@@ -6,13 +6,11 @@ import {
   KeyRound,
   CheckCircle,
   ShoppingBag,
-  Users,
   Mail,
-  AlertTriangle,
   Gamepad2,
   Activity,
   ArrowRight,
-  ShieldAlert,
+  RefreshCw,
 } from 'lucide-react';
 
 export default function DashboardView({ setCurrentSection }) {
@@ -20,138 +18,149 @@ export default function DashboardView({ setCurrentSection }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadStats() {
-      try {
-        const res = await api.get('/admin/dashboard');
-        setData(res);
-      } catch (err) {
-        console.error('Failed to load dashboard stats', err);
-      } finally {
-        setLoading(false);
-      }
+  const loadStats = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/admin/dashboard');
+      setData(res);
+    } catch (err) {
+      console.error('Failed to load dashboard stats', err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
     loadStats();
   }, []);
-
-  if (loading) {
-    return <div style={{ padding: '2rem', textAlign: 'center' }}>جاري تحميل الإحصائيات...</div>;
-  }
 
   const counts = data?.counts || {};
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-      <div>
-        <h2 style={{ fontSize: '1.65rem', fontWeight: 800, marginBottom: '0.35rem' }}>
-          {t('dashboard')}
-        </h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          نظرة عامة على حالة المخزون، الطلبات، وصناديق البريد النشطة
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div>
+          <h2 style={{ fontSize: '1.85rem', fontWeight: 900, marginBottom: '0.35rem', color: '#fff' }}>
+            {t('dashboard')}
+          </h2>
+          <p style={{ color: 'var(--m)', fontSize: '0.95rem' }}>
+            نظرة عامة على حالة المخزون، الطلبات النشطة، وصناديق البريد المتزامنة
+          </p>
+        </div>
+
+        <button
+          onClick={loadStats}
+          disabled={loading}
+          className="btn-alt"
+          style={{ gap: '0.5rem', minHeight: 44 }}
+        >
+          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          <span>{t('refresh')}</span>
+        </button>
       </div>
 
       {/* Metrics Grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1.25rem',
-        }}
-      >
+      <div className="stats-grid">
         <StatCard
           title="حسابات متاحة"
           value={counts.available_accounts || 0}
-          subtitle="جاهزة للتخصيص الفوري"
+          subtitle="جاهزة للتخصيص الفوري للعملاء"
           icon={KeyRound}
-          color="#10b981"
-          glow="rgba(16, 185, 129, 0.3)"
+          color="var(--p)"
+          glow="rgba(200, 249, 32, 0.4)"
+          badge="متوفر"
         />
         <StatCard
           title="حسابات مخصصة"
           value={counts.assigned_accounts || 0}
           subtitle="مرتبطة بطلبات نشطة"
           icon={CheckCircle}
-          color="#6366f1"
-          glow="rgba(99, 102, 241, 0.3)"
+          color="#38bdf8"
+          glow="rgba(56, 189, 248, 0.4)"
+          badge="نشط"
         />
         <StatCard
           title="إجمالي الطلبات"
           value={counts.orders || 0}
           subtitle="طلبات المتجر المسجلة"
           icon={ShoppingBag}
-          color="#06b6d4"
-          glow="rgba(6, 182, 212, 0.3)"
+          color="#a78bfa"
+          glow="rgba(167, 139, 250, 0.4)"
         />
         <StatCard
-          title="صناديق البريد النشطة"
+          title="صناديق البريد"
           value={counts.mailboxes || 0}
           subtitle="IMAP & Microsoft Graph"
           icon={Mail}
-          color="#f59e0b"
-          glow="rgba(245, 158, 11, 0.3)"
+          color="#fbbf24"
+          glow="rgba(251, 191, 36, 0.4)"
         />
       </div>
 
       {/* Steam Integration Status Banner */}
       <div
-        className="glass-panel"
+        className="card-neon"
         style={{
-          padding: '1.5rem',
+          padding: '1.5rem 1.75rem',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '1rem',
-          background: 'linear-gradient(135deg, rgba(22, 32, 54, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%)',
-          border: '1px solid rgba(6, 182, 212, 0.25)',
+          background: 'linear-gradient(135deg, rgba(37, 43, 121, 0.7) 0%, rgba(30, 27, 67, 0.9) 100%)',
+          border: '1.5px solid var(--line)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <div
             style={{
-              width: 48,
-              height: 48,
-              borderRadius: 'var(--radius-md)',
-              background: 'rgba(6, 182, 212, 0.15)',
+              width: 52,
+              height: 52,
+              borderRadius: '16px',
+              background: 'rgba(200, 249, 32, 0.12)',
+              border: '1px solid rgba(200, 249, 32, 0.4)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#38bdf8',
+              color: 'var(--p)',
+              boxShadow: '0 0 20px rgba(200, 249, 32, 0.25)',
             }}
           >
-            <Gamepad2 size={24} />
+            <Gamepad2 size={28} />
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#f8fafc' }}>
-              حالة محلل رسائل Steam Mail Profile
+            <div style={{ fontWeight: 800, fontSize: '1.15rem', color: '#fff' }}>
+              محلل رسائل Steam Guard Mail Profile
             </div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              الحالة الحالية: <span style={{ color: '#38bdf8', fontWeight: 600 }}>{data?.steam_status}</span>
+            <div style={{ fontSize: '0.875rem', color: 'var(--m)' }}>
+              الحالة التشغيلية: <span style={{ color: 'var(--p)', fontWeight: 700 }}>{data?.steam_status || 'نشط ومفعّل'}</span>
             </div>
           </div>
         </div>
 
         <button
           onClick={() => setCurrentSection('platforms')}
-          className="btn btn-secondary btn-sm"
+          className="btn-alt"
+          style={{ minHeight: 42, padding: '0 20px' }}
         >
           <span>إعدادات Steam</span>
+          <ArrowRight size={15} />
         </button>
       </div>
 
-      {/* Recent Events & Quick Actions */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+      {/* Split Grid: Recent Activity & Quick Actions */}
+      <div className="responsive-split-grid">
         {/* Recent Audit Activity */}
-        <div className="glass-panel" style={{ padding: '1.5rem' }}>
+        <div className="card-neon" style={{ padding: '1.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Activity size={18} color="var(--accent-primary)" />
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Activity size={20} color="var(--p)" />
               <span>آخر النشاطات وسجلات التدقيق</span>
             </h3>
             <button
               onClick={() => setCurrentSection('audit')}
-              className="btn btn-ghost btn-sm"
+              className="btn-alt"
+              style={{ minHeight: 34, padding: '0 14px', fontSize: '0.8rem' }}
             >
               عرض الكل
             </button>
@@ -163,28 +172,28 @@ export default function DashboardView({ setCurrentSection }) {
                 <div
                   key={ev.id}
                   style={{
-                    padding: '0.75rem 1rem',
-                    borderRadius: 'var(--radius-md)',
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid var(--border-subtle)',
+                    padding: '0.85rem 1.1rem',
+                    borderRadius: '12px',
+                    background: 'rgba(10, 12, 50, 0.45)',
+                    border: '1px solid var(--line)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    fontSize: '0.875rem',
+                    fontSize: '0.9rem',
                   }}
                 >
                   <div>
-                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{ev.action}</span>
-                    <span style={{ margin: '0 0.5rem', color: 'var(--text-muted)' }}>•</span>
-                    <span style={{ color: 'var(--text-secondary)' }}>{ev.target_type}</span>
+                    <span style={{ fontWeight: 700, color: 'var(--p)' }}>{ev.action}</span>
+                    <span style={{ margin: '0 0.5rem', color: 'var(--line)' }}>•</span>
+                    <span style={{ color: 'var(--m)' }}>{ev.target_type}</span>
                   </div>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '0.775rem', color: 'var(--m)' }}>
                     {ev.created_at ? new Date(ev.created_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : ''}
                   </span>
                 </div>
               ))
             ) : (
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center', padding: '1rem' }}>
+              <div style={{ color: 'var(--m)', fontSize: '0.9rem', textAlign: 'center', padding: '1.5rem' }}>
                 لا توجد سجلات تدقيق حديثة
               </div>
             )}
@@ -192,19 +201,19 @@ export default function DashboardView({ setCurrentSection }) {
         </div>
 
         {/* Quick Operations */}
-        <div className="glass-panel" style={{ padding: '1.5rem' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1.25rem' }}>
-            إجراءات سريعة
+        <div className="card-neon" style={{ padding: '1.75rem' }}>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, marginBottom: '1.25rem' }}>
+            {t('quick_actions')}
           </h3>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
             <button
               onClick={() => setCurrentSection('accounts')}
-              className="btn btn-secondary"
-              style={{ justifyContent: 'space-between', padding: '0.9rem 1.1rem' }}
+              className="btn-alt"
+              style={{ justifyContent: 'space-between', minHeight: 52, padding: '0 1.25rem' }}
             >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <KeyRound size={18} color="var(--accent-primary)" />
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <KeyRound size={18} color="var(--p)" />
                 <span>إضافة وتعديل حسابات المخزون</span>
               </span>
               <ArrowRight size={16} />
@@ -212,11 +221,11 @@ export default function DashboardView({ setCurrentSection }) {
 
             <button
               onClick={() => setCurrentSection('import')}
-              className="btn btn-secondary"
-              style={{ justifyContent: 'space-between', padding: '0.9rem 1.1rem' }}
+              className="btn-alt"
+              style={{ justifyContent: 'space-between', minHeight: 52, padding: '0 1.25rem' }}
             >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <CheckCircle size={18} color="var(--success)" />
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <CheckCircle size={18} color="var(--p)" />
                 <span>استيراد جماعي لحسابات عبر CSV</span>
               </span>
               <ArrowRight size={16} />
@@ -224,11 +233,11 @@ export default function DashboardView({ setCurrentSection }) {
 
             <button
               onClick={() => setCurrentSection('orders')}
-              className="btn btn-secondary"
-              style={{ justifyContent: 'space-between', padding: '0.9rem 1.1rem' }}
+              className="btn-alt"
+              style={{ justifyContent: 'space-between', minHeight: 52, padding: '0 1.25rem' }}
             >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <ShoppingBag size={18} color="var(--accent-secondary)" />
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <ShoppingBag size={18} color="#38bdf8" />
                 <span>إنشاء وتخصيص طلب لعميل</span>
               </span>
               <ArrowRight size={16} />
@@ -236,11 +245,11 @@ export default function DashboardView({ setCurrentSection }) {
 
             <button
               onClick={() => setCurrentSection('mailboxes')}
-              className="btn btn-secondary"
-              style={{ justifyContent: 'space-between', padding: '0.9rem 1.1rem' }}
+              className="btn-alt"
+              style={{ justifyContent: 'space-between', minHeight: 52, padding: '0 1.25rem' }}
             >
-              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Mail size={18} color="var(--warning)" />
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <Mail size={18} color="#fbbf24" />
                 <span>فحص واختبار صناديق البريد</span>
               </span>
               <ArrowRight size={16} />

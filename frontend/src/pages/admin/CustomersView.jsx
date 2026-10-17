@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../api/client';
 import { useLang } from '../../context/LangContext';
 import Modal from '../../components/Modal';
-import { Users, Plus, AlertCircle, ShoppingBag } from 'lucide-react';
+import { Plus, AlertCircle, ShoppingBag, RefreshCw, User } from 'lucide-react';
 
 export default function CustomersView() {
   const { t } = useLang();
@@ -52,18 +52,22 @@ export default function CustomersView() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ fontSize: '1.65rem', fontWeight: 800, marginBottom: '0.35rem' }}>
+          <h2 style={{ fontSize: '1.85rem', fontWeight: 900, marginBottom: '0.35rem', color: '#fff' }}>
             {t('customers')}
           </h2>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-            دليل العملاء المسجلين والطلبات المرتبطة بهم
+          <p style={{ color: 'var(--m)', fontSize: '0.95rem' }}>
+            دليل العملاء المسجلين، معرفات Telegram، وإجمالي الطلبات المرتبطة
           </p>
         </div>
 
-        <button onClick={() => { setErrorMsg(null); setIsAddOpen(true); }} className="btn btn-primary">
+        <button
+          onClick={() => { setErrorMsg(null); setIsAddOpen(true); }}
+          className="btn-neon"
+          style={{ width: 'auto', minHeight: 48, padding: '0 24px', fontSize: '1rem' }}
+        >
           <Plus size={18} />
           <span>{t('add_customer')}</span>
         </button>
@@ -83,31 +87,39 @@ export default function CustomersView() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>
-                  جاري تحميل العملاء...
+                <td colSpan="5" style={{ textAlign: 'center', padding: '3rem', color: 'var(--m)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem' }}>
+                    <RefreshCw size={18} className="animate-spin" color="var(--p)" />
+                    <span>جاري تحميل العملاء...</span>
+                  </div>
                 </td>
               </tr>
             ) : customers.length === 0 ? (
               <tr>
-                <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                <td colSpan="5" style={{ textAlign: 'center', padding: '3rem', color: 'var(--m)' }}>
                   لا يوجد عملاء مسجلين حاليًا
                 </td>
               </tr>
             ) : (
               customers.map((c) => (
                 <tr key={c.id}>
-                  <td style={{ fontWeight: 700 }}>{c.display_name}</td>
-                  <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--text-secondary)' }}>
+                  <td style={{ fontWeight: 800, color: 'var(--p)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <User size={15} color="var(--m)" />
+                      <span>{c.display_name}</span>
+                    </div>
+                  </td>
+                  <td style={{ fontFamily: 'var(--font-mono)', color: 'var(--m)' }}>
                     {c.telegram_user_id || '—'}
                   </td>
                   <td>
-                    <span className="badge badge-info" style={{ gap: '0.35rem' }}>
+                    <span className="badge badge-info" style={{ gap: '0.4rem' }}>
                       <ShoppingBag size={13} />
                       <span>{c.orders_count} طلب</span>
                     </span>
                   </td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{c.notes || '—'}</td>
-                  <td style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  <td style={{ color: 'var(--m)' }}>{c.notes || '—'}</td>
+                  <td style={{ color: 'var(--m)', fontSize: '0.85rem' }}>
                     {c.created_at ? new Date(c.created_at).toLocaleDateString('ar-EG') : '—'}
                   </td>
                 </tr>
@@ -120,51 +132,54 @@ export default function CustomersView() {
       {/* Add Customer Modal */}
       <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="إضافة عميل جديد">
         {errorMsg && (
-          <div className="alert alert-danger">
+          <div className="alert-neon" role="alert">
             <AlertCircle size={16} />
             <span>{errorMsg}</span>
           </div>
         )}
         <form onSubmit={handleCreateCustomer}>
-          <div className="form-group">
-            <label className="form-label">اسم العميل أو الكنية</label>
+          <div className="field">
+            <label className="lbl" htmlFor="cust_name">اسم العميل</label>
             <input
+              id="cust_name"
               type="text"
-              className="form-input"
-              placeholder="مثال: أحمد محمد أو متجر فلان"
+              className="in"
+              placeholder="الاسم الكامل أو المعرّف"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               required
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">معرف Telegram الرقمي (اختياري)</label>
+          <div className="field">
+            <label className="lbl" htmlFor="cust_telegram">معرف Telegram الرقمي (اختياري)</label>
             <input
+              id="cust_telegram"
               type="number"
-              className="form-input"
+              className="in"
               placeholder="مثال: 987654321"
               value={telegramId}
               onChange={(e) => setTelegramId(e.target.value)}
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label">{t('notes')}</label>
+          <div className="field">
+            <label className="lbl" htmlFor="cust_notes">{t('notes')}</label>
             <textarea
-              className="form-textarea"
-              rows="2"
-              placeholder="أي تفاصيل أو معلومات تواصل..."
+              id="cust_notes"
+              className="in"
+              rows={2}
+              placeholder="ملاحظات حول العميل (اختياري)"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
             />
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
-            <button type="button" onClick={() => setIsAddOpen(false)} className="btn btn-secondary">
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+            <button type="button" onClick={() => setIsAddOpen(false)} className="btn-alt">
               {t('cancel')}
             </button>
-            <button type="submit" className="btn btn-primary">
+            <button type="submit" className="btn-neon" style={{ width: 'auto', minHeight: 48, padding: '0 24px' }}>
               {t('save')}
             </button>
           </div>

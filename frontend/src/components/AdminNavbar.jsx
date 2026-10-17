@@ -2,9 +2,9 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLang } from '../context/LangContext';
 import { useRouter } from '../context/RouterContext';
-import { ShieldCheck, LogOut, Globe, User } from 'lucide-react';
+import { ShieldCheck, LogOut, Globe, User, Menu, X, ArrowLeft } from 'lucide-react';
 
-export default function AdminNavbar() {
+export default function AdminNavbar({ sidebarOpen, onToggleSidebar }) {
   const { adminUser, adminLogout } = useAuth();
   const { lang, toggleLang, t } = useLang();
   const { navigate } = useRouter();
@@ -15,69 +15,62 @@ export default function AdminNavbar() {
   };
 
   return (
-    <nav
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0.85rem 1.75rem',
-        background: 'rgba(15, 23, 42, 0.95)',
-        backdropFilter: 'blur(16px)',
-        borderBottom: '1px solid rgba(99, 102, 241, 0.25)',
-        position: 'sticky',
-        top: 0,
-        zIndex: 50,
-      }}
-    >
-      <div
-        onClick={() => navigate('/admin')}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.65rem',
-          cursor: 'pointer',
-        }}
-      >
-        <div
-          style={{
-            width: 38,
-            height: 38,
-            borderRadius: 'var(--radius-md)',
-            background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 0 15px rgba(99, 102, 241, 0.4)',
-          }}
+    <header className="top-navbar">
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+        {/* Mobile Sidebar Hamburger Toggle */}
+        <button
+          type="button"
+          onClick={onToggleSidebar}
+          className="btn btn-secondary btn-sm"
+          style={{ display: 'inline-flex', padding: '0.45rem', border: '1px solid var(--border-subtle)' }}
+          aria-label={sidebarOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
         >
-          <ShieldCheck size={22} color="#ffffff" />
-        </div>
-        <div>
-          <h1
+          {sidebarOpen ? <X size={19} /> : <Menu size={19} />}
+        </button>
+
+        {/* Brand / Logo */}
+        <div
+          onClick={() => navigate('/admin')}
+          className="brand-badge"
+          title="الرئيسية"
+        >
+          <div
+            className="brand-icon"
             style={{
-              fontSize: '1.25rem',
-              fontWeight: 800,
-              letterSpacing: '-0.02em',
-              background: 'linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              margin: 0,
+              background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+              boxShadow: '0 0 15px rgba(99, 102, 241, 0.4)',
             }}
           >
-            OrderTrofy <span style={{ color: 'var(--accent-primary)', fontSize: '0.85rem', fontWeight: 600 }}>Admin</span>
-          </h1>
-          <span style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
-            لوحة الإدارة المركزية لحسابات وصناديق Steam
-          </span>
+            <ShieldCheck size={22} color="#ffffff" />
+          </div>
+          <div>
+            <h1 className="brand-title">
+              OrderTrofy <span style={{ color: 'var(--accent-primary)', fontSize: '0.85rem', fontWeight: 700 }}>Admin</span>
+            </h1>
+            <span className="brand-subtitle hide-on-mobile">
+              لوحة الإدارة المركزية لحسابات وصناديق Steam
+            </span>
+          </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+        {/* Customer Portal Quick Link */}
+        <button
+          onClick={() => navigate('/')}
+          className="btn btn-ghost btn-sm hide-on-mobile"
+          title="عرض بوابة العميل"
+          style={{ gap: '0.4rem', color: 'var(--text-secondary)' }}
+        >
+          <ArrowLeft size={15} />
+          <span>بوابة العميل</span>
+        </button>
+
         {/* Language switch */}
         <button
           onClick={toggleLang}
           className="btn btn-secondary btn-sm"
-          title="Switch Language"
+          title="تغيير اللغة"
           style={{ gap: '0.35rem' }}
         >
           <Globe size={15} />
@@ -86,7 +79,7 @@ export default function AdminNavbar() {
 
         {/* Admin User Info & Logout */}
         {adminUser && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <div
               style={{
                 display: 'flex',
@@ -100,7 +93,16 @@ export default function AdminNavbar() {
               }}
             >
               <User size={14} color="var(--accent-primary)" />
-              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+              <span
+                style={{
+                  fontWeight: 600,
+                  color: 'var(--text-primary)',
+                  maxWidth: 130,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {adminUser.display_name || adminUser.email}
               </span>
               <span
@@ -121,15 +123,15 @@ export default function AdminNavbar() {
             <button
               onClick={handleLogout}
               className="btn btn-secondary btn-sm"
-              title="تسجيل الخروج"
+              title={t('logout')}
               style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
             >
-              <LogOut size={16} />
-              <span>خروج</span>
+              <LogOut size={15} />
+              <span className="hide-on-mobile">{t('logout')}</span>
             </button>
           </div>
         )}
       </div>
-    </nav>
+    </header>
   );
 }

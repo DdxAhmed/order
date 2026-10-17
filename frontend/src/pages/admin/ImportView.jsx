@@ -2,15 +2,14 @@ import React, { useState } from 'react';
 import { api } from '../../api/client';
 import { useLang } from '../../context/LangContext';
 import {
-  FileSpreadsheet,
   Upload,
   CheckCircle2,
   AlertCircle,
-  FileText,
-  ArrowRight,
+  FileSpreadsheet,
+  Check,
 } from 'lucide-react';
 
-export default function ImportView({ setCurrentSection }) {
+export default function ImportView() {
   const { t } = useLang();
 
   const [file, setFile] = useState(null);
@@ -57,7 +56,7 @@ export default function ImportView({ setCurrentSection }) {
     setErrorMsg(null);
     try {
       const res = await api.post(`/admin/import/${previewData.batch_id}/commit`, {});
-      setSuccessMsg(res.message || 'تم استيراد الحسابات بنجاح');
+      setSuccessMsg(res.message || 'تم استيراد الحسابات بنجاح وإضافتها للمخزون');
       setPreviewData(null);
       setFile(null);
     } catch (err) {
@@ -68,42 +67,43 @@ export default function ImportView({ setCurrentSection }) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
       <div>
-        <h2 style={{ fontSize: '1.65rem', fontWeight: 800, marginBottom: '0.35rem' }}>
+        <h2 style={{ fontSize: '1.85rem', fontWeight: 900, marginBottom: '0.35rem', color: '#fff' }}>
           {t('import')}
         </h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          استيراد حسابات المخزون دفعة واحدة من ملف CSV مع المعاينة والتحقق المسبق
+        <p style={{ color: 'var(--m)', fontSize: '0.95rem' }}>
+          استيراد حسابات المخزون دفعة واحدة من ملف CSV مع التحقق المسبق والمعاينة
         </p>
       </div>
 
       {errorMsg && (
-        <div className="alert alert-danger">
+        <div className="alert-neon" role="alert">
           <AlertCircle size={18} />
           <span>{errorMsg}</span>
         </div>
       )}
 
       {successMsg && (
-        <div className="alert alert-success">
+        <div className="alert-neon alert-success" role="alert">
           <CheckCircle2 size={18} />
           <span>{successMsg}</span>
         </div>
       )}
 
       {/* Upload Zone */}
-      <div className="glass-panel" style={{ padding: '2rem' }}>
+      <div className="card-neon" style={{ padding: '2rem' }}>
         <form onSubmit={handleUploadPreview} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div
             style={{
-              border: '2px dashed var(--border-subtle)',
+              border: '2px dashed var(--line)',
               borderRadius: 'var(--radius-lg)',
               padding: '2.5rem 1.5rem',
               textAlign: 'center',
-              background: 'rgba(0, 0, 0, 0.2)',
+              background: 'rgba(10, 12, 50, 0.4)',
               cursor: 'pointer',
               position: 'relative',
+              transition: 'border-color 0.2s',
             }}
           >
             <input
@@ -121,25 +121,27 @@ export default function ImportView({ setCurrentSection }) {
             />
             <div
               style={{
-                width: 52,
-                height: 52,
-                borderRadius: 'var(--radius-md)',
-                background: 'rgba(99, 102, 241, 0.15)',
-                color: 'var(--accent-primary)',
+                width: 60,
+                height: 60,
+                borderRadius: '18px',
+                background: 'rgba(200, 249, 32, 0.12)',
+                border: '1px solid rgba(200, 249, 32, 0.4)',
+                color: 'var(--p)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: '0.75rem',
+                marginBottom: '1rem',
+                boxShadow: '0 0 25px rgba(200, 249, 32, 0.25)',
               }}
             >
-              <Upload size={26} />
+              <Upload size={30} />
             </div>
 
-            <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.25rem' }}>
+            <h4 style={{ fontSize: '1.15rem', fontWeight: 800, marginBottom: '0.35rem', color: '#fff' }}>
               {file ? file.name : 'اختر ملف CSV أو اسحبه هنا'}
             </h4>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-              يجب أن يحتوي الملف على الأعمدة: platform, account_identifier, mailbox_reference, status, notes
+            <p style={{ fontSize: '0.85rem', color: 'var(--m)' }}>
+              يجب أن يحتوي الملف على الأعمدة: <code style={{ color: 'var(--p)', fontFamily: 'var(--font-mono)' }}>identifier, platform, mailbox_label, password</code>
             </p>
           </div>
 
@@ -147,74 +149,80 @@ export default function ImportView({ setCurrentSection }) {
             <button
               type="submit"
               disabled={!file || uploading}
-              className="btn btn-primary"
+              className="btn-neon"
+              style={{ width: 'auto', minHeight: 48, padding: '0 28px' }}
             >
-              <FileSpreadsheet size={16} />
-              <span>{uploading ? 'جاري قراءة ومعاينة الملف...' : 'معاينة وفحص الملف'}</span>
+              <FileSpreadsheet size={18} />
+              <span>{uploading ? 'جاري فحص الملف...' : 'معاينة الملف والتحقق'}</span>
             </button>
           </div>
         </form>
       </div>
 
-      {/* Preview Table & Commit Action */}
+      {/* Preview Section */}
       {previewData && (
-        <div className="glass-panel" style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+        <div className="card-neon" style={{ padding: '1.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>
-                معاينة نتائج الملف ({previewData.total_rows} سطر)
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff' }}>
+                نتائج معاينة الدفعة (Batch #{previewData.batch_id})
               </h3>
-              <span style={{ fontSize: '0.85rem', color: previewData.error_count > 0 ? 'var(--danger)' : 'var(--success)' }}>
-                {previewData.error_count > 0
-                  ? `يوجد ${previewData.error_count} خطأ يجب تصحيحه قبل الاعتماد`
-                  : 'جميع الأسطر صحيحة وجاهزة للاستيراد'}
-              </span>
+              <p style={{ fontSize: '0.875rem', color: 'var(--m)' }}>
+                إجمالي السجلات: {previewData.total_rows} • السجلات الصالحة: <span style={{ color: 'var(--p)', fontWeight: 700 }}>{previewData.valid_rows}</span> • السجلات غير الصالحة: <span style={{ color: '#ff8787', fontWeight: 700 }}>{previewData.invalid_rows}</span>
+              </p>
             </div>
 
             <button
+              type="button"
               onClick={handleCommit}
-              disabled={committing || previewData.error_count > 0}
-              className="btn btn-success"
+              disabled={committing || previewData.valid_rows === 0}
+              className="btn-neon"
+              style={{ width: 'auto', minHeight: 48, padding: '0 28px' }}
             >
-              <CheckCircle2 size={16} />
-              <span>{committing ? 'جاري الاعتماد...' : 'تأكيد واستيراد الحسابات'}</span>
+              <Check size={18} />
+              <span>{committing ? 'جاري الاستيراد...' : `تأكيد استيراد (${previewData.valid_rows}) حساب`}</span>
             </button>
           </div>
 
-          <div className="table-container">
-            <table className="modern-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>{t('platform')}</th>
-                  <th>{t('identifier')}</th>
-                  <th>صندوق البريد</th>
-                  <th>{t('status')}</th>
-                  <th>الحالة والتحقق</th>
-                </tr>
-              </thead>
-              <tbody>
-                {previewData.rows?.map((row) => (
-                  <tr key={row.row_number}>
-                    <td style={{ color: 'var(--text-muted)' }}>{row.row_number}</td>
-                    <td>{row.data?.platform}</td>
-                    <td style={{ fontWeight: 600, fontFamily: 'var(--font-mono)' }}>
-                      {row.data?.account_identifier}
-                    </td>
-                    <td>{row.data?.mailbox_reference}</td>
-                    <td>{row.data?.status}</td>
-                    <td>
-                      {row.error ? (
-                        <span className="badge badge-danger">{row.error}</span>
-                      ) : (
-                        <span className="badge badge-success">صالح</span>
-                      )}
-                    </td>
+          {/* Sample Valid Rows */}
+          {previewData.sample_valid && previewData.sample_valid.length > 0 && (
+            <div className="table-container" style={{ marginBottom: '1.5rem' }}>
+              <table className="modern-table">
+                <thead>
+                  <tr>
+                    <th>المعرف (Identifier)</th>
+                    <th>المنصة (Platform)</th>
+                    <th>صندوق البريد (Mailbox)</th>
+                    <th>كلمة المرور</th>
                   </tr>
+                </thead>
+                <tbody>
+                  {previewData.sample_valid.map((r, i) => (
+                    <tr key={i}>
+                      <td style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--p)' }}>{r.identifier}</td>
+                      <td>{r.platform}</td>
+                      <td>{r.mailbox_label}</td>
+                      <td style={{ color: 'var(--m)', fontFamily: 'var(--font-mono)' }}>{r.has_password ? '••••••••' : 'بدون'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Invalid Rows if any */}
+          {previewData.sample_invalid && previewData.sample_invalid.length > 0 && (
+            <div style={{ padding: '1rem', borderRadius: '12px', background: 'var(--danger-bg)', border: '1px solid var(--danger-border)' }}>
+              <h4 style={{ color: '#ff8787', fontWeight: 700, marginBottom: '0.5rem', fontSize: '0.95rem' }}>
+                أخطاء في بعض السجلات:
+              </h4>
+              <ul style={{ paddingInlineStart: '1.25rem', fontSize: '0.875rem', color: '#ffd0d0' }}>
+                {previewData.sample_invalid.map((inv, idx) => (
+                  <li key={idx}>السطر {inv.row_number}: {inv.reason}</li>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </div>

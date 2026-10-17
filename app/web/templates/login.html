@@ -1,5 +1,0 @@
-{% extends "base.html" %}{% block title %}دخول الإدارة{% endblock %}{% block content %}
-<section class="card login"><h1>دخول الإدارة فقط</h1><p class="muted">هذه الصفحة للمدير وليست لتسجيل العملاء. العميل يدخل من رابط التفعيل الذي يرسله المتجر.</p><form method="post" action="/admin/login">
-<label>البريد الإلكتروني<input type="email" name="email" autocomplete="username" required></label>
-<label>كلمة المرور<input type="password" name="password" autocomplete="current-password" required></label>
-<button type="submit">دخول</button></form></section>{% endblock %}
